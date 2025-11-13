@@ -33,7 +33,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
 
 
             builder.HasOne(e => e.Employee)
-                   .WithMany()
+                   .WithMany(em=>em.EmployeeSummaries)
                    .HasForeignKey(e => e.EmployeeId)
                    .OnDelete(DeleteBehavior.Restrict);
         }

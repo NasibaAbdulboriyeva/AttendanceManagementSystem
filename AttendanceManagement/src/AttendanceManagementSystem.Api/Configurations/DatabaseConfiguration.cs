@@ -9,8 +9,8 @@ namespace AttendanceManagementSystem.Web.Configurations
             var connectionString = builder.Configuration.GetConnectionString("DatabaseConnection");
 
             builder.Services.AddDbContext<AppDbContext>(options =>
-              options.UseSqlServer(connectionString).LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
-        .EnableSensitiveDataLogging());
+            options.UseSqlServer(connectionString).LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
+           .EnableSensitiveDataLogging());
         }
     }
 }
