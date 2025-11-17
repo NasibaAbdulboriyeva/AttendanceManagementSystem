@@ -29,10 +29,19 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
                .Where(log => log.EmployeeId == employeeId &&
                              log.RecordedTime.Date >= startDate.Date &&
                              log.RecordedTime.Date <= endDate.Date)
-               .OrderBy(log =>log.RecordedTime)
+               .OrderBy(log=>log.RecordedTime)
                .ToListAsync();
         }
-
+        public async Task<ICollection<AttendanceLog>> GetLogsByEmployeeICCodeAsync(string code, DateTime startDate, DateTime endDate)
+        {
+            return await _context.AttendanceLogs
+               .AsNoTracking()
+               .Where(log => log.Employee.Code == code &&
+                             log.RecordedTime.Date >= startDate.Date &&
+                             log.RecordedTime.Date <= endDate.Date)
+               .OrderBy(log => log.RecordedTime)
+               .ToListAsync();
+        }
         public async Task<ICollection<AttendanceLog>> GetLogsForAllEmployeesByDayAsync(DateTime targetDate)
         {
                 return await _context.AttendanceLogs

@@ -1,5 +1,4 @@
-﻿
-using AttendanceManagementSystem.Application.Abstractions;
+﻿using AttendanceManagementSystem.Application.Abstractions;
 using AttendanceManagementSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 

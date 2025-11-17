@@ -1,3 +1,4 @@
+using AttendanceManagementSystem.Api.Configurations;
 using AttendanceManagementSystem.Web.Configurations;
 
 namespace AttendanceManagementSystem.Api
@@ -11,6 +12,7 @@ namespace AttendanceManagementSystem.Api
             // Add services to the container.
             builder.Services.AddControllersWithViews();
             builder.ConfigureDB();  
+            builder.ConfigureDI();  
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -30,7 +32,7 @@ namespace AttendanceManagementSystem.Api
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
+                pattern: "{controller=Admin}/{action=Index}/{id?}");
 
             app.Run();
         }

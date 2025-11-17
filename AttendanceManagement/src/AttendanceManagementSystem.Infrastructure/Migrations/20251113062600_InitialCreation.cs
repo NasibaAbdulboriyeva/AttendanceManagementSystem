@@ -15,12 +15,14 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                 name: "DoorActivityLogs",
                 columns: table => new
                 {
+
                     DoorActivityLogId = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     RecordedTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DeviceName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
                 },
+
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DoorActivityLogs", x => x.DoorActivityLogId);

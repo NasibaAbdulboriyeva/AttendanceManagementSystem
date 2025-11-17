@@ -7,6 +7,7 @@
         public string Code { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime ModifiedAt { get; set; }
         public ICollection<AttendanceLog> AttendanceLogs { get; set; }
         public ICollection<EmployeeSummary> EmployeeSummaries { get; set; }
         public EmployeeSchedule EmployeeSchedule { get; set; }
