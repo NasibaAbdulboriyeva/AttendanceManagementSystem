@@ -1,8 +1,8 @@
 ﻿using AttendanceManagementSystem.Application.Abstractions;
 using AttendanceManagementSystem.Application.DTOs;
 using AttendanceManagementSystem.Domain.Entities;
-using System.Globalization;
 using ClosedXML.Excel;
+using System.Globalization;
 namespace AttendanceManagementSystem.Application.Services
 {
     public class UploadService : IUploadService
@@ -52,7 +52,7 @@ namespace AttendanceManagementSystem.Application.Services
                 }
 
                 int rowCount = lastRow.RowNumber();
-                int rowStart = 2; 
+                int rowStart = 2;
 
                 for (int rowNum = rowStart; rowNum <= rowCount; rowNum++)
                 {
@@ -165,7 +165,7 @@ namespace AttendanceManagementSystem.Application.Services
                     throw new InvalidOperationException("Fayl ClosedXML tomonidan o'qilmadi. Fayl formatini tekshiring (faqat XLSX tavsiya etiladi).", ex);
                 }
 
-              
+
                 IXLWorksheet worksheet = workbook.Worksheet(1);
 
                 if (worksheet == null)
@@ -181,13 +181,13 @@ namespace AttendanceManagementSystem.Application.Services
                 }
 
                 int rowCount = lastRow.RowNumber();
-                int rowStart = 2; 
+                int rowStart = 2;
 
                 for (int rowNum = rowStart; rowNum <= rowCount; rowNum++)
                 {
                     IXLRow row = worksheet.Row(rowNum);
 
-                  
+
                     var rawSchedule = new
                     {
                         Username = row.Cell(2).GetString().Trim(), // F.I.O. сотрудника
@@ -204,7 +204,7 @@ namespace AttendanceManagementSystem.Application.Services
                     {
                         continue;
                     }
-                   var employee = new Employee();
+                    var employee = new Employee();
                     if (employeeCache.ContainsKey(icNumber))
                     {
                         employee = employeeCache[icNumber];
@@ -236,32 +236,32 @@ namespace AttendanceManagementSystem.Application.Services
                     }
                     else if (!TimeSpan.TryParse(rawSchedule.StartTimeText, CultureInfo.InvariantCulture, out startTime))
                     {
-                       
+
                         continue;
                     }
 
                     if (employee != null)
                     {
-                      
+
                         schedulesToSave.Add(new EmployeeSchedule
                         {
                             EmployeeId = employee.EmployeeId,
-                            StartTime = startTime, 
+                            StartTime = startTime,
                             CreatedAt = DateTime.Now,
-                            
+
                         });
                     }
                 }
             }
 
-            
+
             await _employeeRepo.AddRangeEmployeeScheduleAsync(schedulesToSave);
 
-            
+
             return schedulesToSave.Count;
         }
 
-      
+
     }
 
 }

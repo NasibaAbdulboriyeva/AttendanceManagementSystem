@@ -23,6 +23,11 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
             builder.Property(s => s.LimitInMinutes)
                 .IsRequired();
 
+            builder.Property(e => e.CreatedAt)
+                   .IsRequired()
+                   .HasColumnType("datetime2")
+                   .HasDefaultValueSql("GETDATE()");
+
         }
     }
 }

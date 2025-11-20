@@ -12,7 +12,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence
 
         public DbSet<Employee> Employees { get; set; }
         public DbSet<EmployeeSchedule> EmployeeSchedules { get; set; }
-        public DbSet<EmployeeSummary> EmployeeSummaries { get; set; }
+        public DbSet<CurrentAttendanceLog> CurrentAttendanceLogs { get; set; }
         public DbSet<AttendanceLog> AttendanceLogs { get; set; }
         public DbSet<DoorActivityLog> DoorActivityLogs { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)

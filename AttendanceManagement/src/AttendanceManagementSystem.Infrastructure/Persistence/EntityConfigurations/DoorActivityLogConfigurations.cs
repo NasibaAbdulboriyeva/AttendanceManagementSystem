@@ -21,6 +21,11 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
             builder.Property(e => e.DeviceName)
                    .IsRequired()
                    .HasMaxLength(100);
+
+            builder.Property(e => e.CreatedAt)
+                   .IsRequired()
+                   .HasColumnType("datetime2")
+                   .HasDefaultValueSql("GETDATE()");
         }
     }
 }

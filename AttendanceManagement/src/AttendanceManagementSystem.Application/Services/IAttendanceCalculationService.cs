@@ -1,17 +1,28 @@
-﻿using AttendanceManagementSystem.Domain.Entities;
+﻿using AttendanceManagementSystem.Application.DTOs;
+using AttendanceManagementSystem.Domain.Entities;
 
 
 namespace AttendanceManagementSystem.Application.Services
 {
     public interface IAttendanceCalculationService
     {
-        // Barcha xodimlar uchun ma'lum bir sana bo'yicha hisobotni hisoblash va saqlash
-        Task<int> ProcessDailyAttendanceAsync(DateTime date);
+        Task<ICollection<CalculatedDailyLogDto>> GetCalculatedAttendanceForPeriodAsync(
+            string employeeCode,
+            DateTime startDate,
+            DateTime endDate);
+        Task<ICollection<CalculatedDailyLogDto>> GetLateArrivalsForPeriodAsync(
+            string employeeCode,
+            DateTime startDate,
+            DateTime endDate);
 
-        // Xodim uchun ma'lum bir oyga doir barcha ma'lumotlarni hisoblash
-        Task<EmployeeSummaryDto> GetMonthlySummaryAsync(long employeeId, int year, int month);
+        Task<EmployeeSummaryDto> CalculateAndSaveMonthlySummaryAsync(
+            string employeeCode,
+            int year,
+            int month);
 
-        // Kechikish/Erta ketish kabi individual log yozuvini tekshirish
-        Task<CalculatedLogDto> CalculateLogStatusAsync(AttendanceLog log);
+        Task<RemainingLimitDto> CheckRemainingLateLimitAsync(
+            string employeeCode,
+            int year,
+            int month);
     }
 }

@@ -22,7 +22,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<ICollection<AttendanceLog>> GetLogsByEmployeeIdAsync(int employeeId, DateTime startDate, DateTime endDate)
+        public async Task<ICollection<AttendanceLog>> GetLogsByEmployeeIdAsync(long employeeId, DateTime startDate, DateTime endDate)
         {
             return await _context.AttendanceLogs
                .AsNoTracking()
@@ -44,11 +44,28 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         }
         public async Task<ICollection<AttendanceLog>> GetLogsForAllEmployeesByDayAsync(DateTime targetDate)
         {
-                return await _context.AttendanceLogs
-                    .AsNoTracking()
-                    .Where(log => log.RecordedTime.Date == targetDate.Date) 
-                    .OrderBy(log => log.RecordedTime) 
-                    .ToListAsync();
+            return await _context.AttendanceLogs
+                .AsNoTracking()
+                .Where(log => log.RecordedTime.Date == targetDate.Date)
+                .OrderBy(log => log.RecordedTime)
+                .ToListAsync();
+        }
+        public async Task<ICollection<AttendanceLog>> GetLogsForEmployeeAndPeriodAsync(
+            long employeeId,
+            DateTime startDate,
+            DateTime endDate)
+        {
+           
+            var query = _context.AttendanceLogs
+
+                .Where(log => log.EmployeeId == employeeId)
+
+                .Where(log => log.RecordedTime.Date >= startDate.Date &&
+                              log.RecordedTime.Date <= endDate.Date)
+                .OrderBy(log => log.RecordedTime);
+
+            return await query.ToListAsync();
         }
     }
 }
+

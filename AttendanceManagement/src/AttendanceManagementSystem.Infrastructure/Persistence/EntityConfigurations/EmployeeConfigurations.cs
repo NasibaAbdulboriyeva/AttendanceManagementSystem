@@ -26,13 +26,16 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
                    .IsRequired()
                    .HasColumnType("datetime2")
                    .HasDefaultValueSql("GETDATE()");
-
+            builder.Property(e => e.ModifiedAt)
+                 .IsRequired()
+                 .HasColumnType("datetime2")
+                 .HasDefaultValueSql("GETDATE()");
             builder.HasMany(e => e.AttendanceLogs)
                    .WithOne(al => al.Employee)
                    .HasForeignKey(al => al.EmployeeId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasMany(e => e.EmployeeSummaries)
+            builder.HasMany(e => e.CurrentAttendanceLogs)
                    .WithOne(es => es.Employee)
                    .HasForeignKey(es => es.EmployeeId)
                    .OnDelete(DeleteBehavior.Restrict);
