@@ -38,10 +38,17 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                     b.Property<long>("EmployeeId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("EntryType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("RawUsername")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<long>("RecordId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTime>("RecordedTime")
                         .HasColumnType("datetime2");
@@ -53,6 +60,9 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                     b.HasKey("AttendenceLogId");
 
                     b.HasIndex("EmployeeId");
+
+                    b.HasIndex("RecordId")
+                        .IsUnique();
 
                     b.ToTable("AttendanceLogs", (string)null);
                 });
@@ -89,10 +99,16 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                     b.Property<bool>("IsJustified")
                         .HasColumnType("bit");
 
+                    b.Property<TimeOnly>("LastLeavingTime")
+                        .HasColumnType("time");
+
                     b.Property<int>("LateArrivalMinutes")
                         .HasColumnType("int");
 
                     b.Property<int>("RemainingLateMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WorkedHours")
                         .HasColumnType("int");
 
                     b.HasKey("CurrentAttendanceLogId");
@@ -141,20 +157,16 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("EmployeeId"));
 
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("CardId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CardNumber")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -162,9 +174,22 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                         .HasDefaultValue(true);
 
                     b.Property<DateTime>("ModifiedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.HasKey("EmployeeId");
+
+                    b.HasIndex("CardNumber")
+                        .IsUnique();
+
+                    b.HasIndex("UserName")
+                        .IsUnique();
 
                     b.ToTable("Employees", (string)null);
                 });
@@ -185,8 +210,20 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                     b.Property<long>("EmployeeId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("EmployementType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time");
+
                     b.Property<int>("LimitInMinutes")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("ModifiedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<TimeSpan>("StartTime")
                         .HasColumnType("time");

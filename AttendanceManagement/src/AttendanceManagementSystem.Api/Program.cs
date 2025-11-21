@@ -32,7 +32,7 @@ namespace AttendanceManagementSystem.Api
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Admin}/{action=Index}/{id?}");
+                pattern: "{controller=AdminAttendance}/{action=Index}/{id?}");
 
             app.Run();
         }

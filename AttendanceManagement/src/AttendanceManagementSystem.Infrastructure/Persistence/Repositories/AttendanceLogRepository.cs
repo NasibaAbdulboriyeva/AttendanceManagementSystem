@@ -36,7 +36,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         {
             return await _context.AttendanceLogs
                .AsNoTracking()
-               .Where(log => log.Employee.Code == code &&
+               .Where(log => /*log.Employee.Code == code &&*/
                              log.RecordedTime.Date >= startDate.Date &&
                              log.RecordedTime.Date <= endDate.Date)
                .OrderBy(log => log.RecordedTime)

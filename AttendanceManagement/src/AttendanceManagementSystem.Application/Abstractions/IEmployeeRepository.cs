@@ -4,8 +4,9 @@ namespace AttendanceManagementSystem.Application.Abstractions
 {
     public interface IEmployeeRepository
     {
-        Task<Employee?> GetEmployeeByICCodeAsync(string code);
+       
         Task<Employee?> GetEmployeeByIdAsync(long id);
+        Task<Employee?> GetEmployeeByICCodeAsync(string code);
         Task<long> AddEmployeeAsync(Employee employee);
         Task SetEmployeeInactiveAsync(string code);
         Task UpdateEmployeeAsync(Employee employee);

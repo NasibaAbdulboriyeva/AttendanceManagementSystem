@@ -80,7 +80,7 @@ namespace AttendanceManagementSystem.Application.Services
                 {
                     Date = record.Date,
                     EmployeeCode = employeeCode,
-                    EmployeeFullName = employee.FullName,
+                    EmployeeFullName = employee.UserName,
                     ScheduledStartTime = schedule.StartTime,
                     FirstCheckInTime = actualCheckIn,
                     LateMinutesTotal = totalLateMinutes > 0 ? totalLateMinutes : 0,

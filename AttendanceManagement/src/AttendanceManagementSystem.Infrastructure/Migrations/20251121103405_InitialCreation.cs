@@ -15,14 +15,13 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                 name: "DoorActivityLogs",
                 columns: table => new
                 {
-
                     DoorActivityLogId = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     RecordedTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DeviceName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                    DeviceName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
                 },
-
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DoorActivityLogs", x => x.DoorActivityLogId);
@@ -34,10 +33,12 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                 {
                     EmployeeId = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    FullName = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
-                    Code = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    UserName = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
+                    CardId = table.Column<int>(type: "int", nullable: false),
+                    CardNumber = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
                 },
                 constraints: table =>
                 {
@@ -50,8 +51,10 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                 {
                     AttendenceLogId = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    RecordId = table.Column<long>(type: "bigint", nullable: false),
                     EmployeeId = table.Column<long>(type: "bigint", nullable: false),
                     RecordedTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EntryType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     RawUsername = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
@@ -68,6 +71,35 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CurrentAttendanceLogs",
+                columns: table => new
+                {
+                    CurrentAttendanceLogId = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    EmployeeId = table.Column<long>(type: "bigint", nullable: false),
+                    LateArrivalMinutes = table.Column<int>(type: "int", nullable: false),
+                    RemainingLateMinutes = table.Column<int>(type: "int", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsJustified = table.Column<bool>(type: "bit", nullable: false),
+                    CalculatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    FirstEntryTime = table.Column<TimeOnly>(type: "time", nullable: false),
+                    LastLeavingTime = table.Column<TimeOnly>(type: "time", nullable: false),
+                    WorkedHours = table.Column<int>(type: "int", nullable: false),
+                    EntryDay = table.Column<DateOnly>(type: "date", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CurrentAttendanceLogs", x => x.CurrentAttendanceLogId);
+                    table.ForeignKey(
+                        name: "FK_CurrentAttendanceLogs_Employees_EmployeeId",
+                        column: x => x.EmployeeId,
+                        principalTable: "Employees",
+                        principalColumn: "EmployeeId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "EmployeeSchedules",
                 columns: table => new
                 {
@@ -76,7 +108,10 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                     EmployeeId = table.Column<long>(type: "bigint", nullable: false),
                     LimitInMinutes = table.Column<int>(type: "int", nullable: false),
                     StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
-                    EndTime = table.Column<TimeSpan>(type: "time", nullable: false)
+                    EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    EmployementType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
+                    ModifiedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
                 },
                 constraints: table =>
                 {
@@ -89,55 +124,40 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "EmployeeSummaries",
-                columns: table => new
-                {
-                    EmployeeSummaryId = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    EmployeeId = table.Column<long>(type: "bigint", nullable: false),
-                    SummaryMonth = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    LateArrivalMinutes = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
-                    CalculatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
-                    EmployeeId1 = table.Column<long>(type: "bigint", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_EmployeeSummaries", x => x.EmployeeSummaryId);
-                    table.ForeignKey(
-                        name: "FK_EmployeeSummaries_Employees_EmployeeId",
-                        column: x => x.EmployeeId,
-                        principalTable: "Employees",
-                        principalColumn: "EmployeeId",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_EmployeeSummaries_Employees_EmployeeId1",
-                        column: x => x.EmployeeId1,
-                        principalTable: "Employees",
-                        principalColumn: "EmployeeId");
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_AttendanceLogs_EmployeeId",
                 table: "AttendanceLogs",
                 column: "EmployeeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AttendanceLogs_RecordId",
+                table: "AttendanceLogs",
+                column: "RecordId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CurrentAttendanceLogs_EmployeeId_EntryDay",
+                table: "CurrentAttendanceLogs",
+                columns: new[] { "EmployeeId", "EntryDay" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Employees_CardNumber",
+                table: "Employees",
+                column: "CardNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Employees_UserName",
+                table: "Employees",
+                column: "UserName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_EmployeeSchedules_EmployeeId",
                 table: "EmployeeSchedules",
                 column: "EmployeeId",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EmployeeSummaries_EmployeeId",
-                table: "EmployeeSummaries",
-                column: "EmployeeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EmployeeSummaries_EmployeeId1",
-                table: "EmployeeSummaries",
-                column: "EmployeeId1");
         }
 
         /// <inheritdoc />
@@ -147,13 +167,13 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                 name: "AttendanceLogs");
 
             migrationBuilder.DropTable(
+                name: "CurrentAttendanceLogs");
+
+            migrationBuilder.DropTable(
                 name: "DoorActivityLogs");
 
             migrationBuilder.DropTable(
                 name: "EmployeeSchedules");
-
-            migrationBuilder.DropTable(
-                name: "EmployeeSummaries");
 
             migrationBuilder.DropTable(
                 name: "Employees");

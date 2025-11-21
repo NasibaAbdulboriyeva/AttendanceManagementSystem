@@ -23,15 +23,10 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         public async Task<ICollection<Employee>> GetAllEmployeesAsync()
         {
             return await _context.Employees
-                                 .OrderBy(e => e.FullName)
+                                 .OrderBy(e => e.UserName)
                                  .ToListAsync();
         }
-        public async Task<Employee?> GetEmployeeByICCodeAsync(string code)
-        {
-            var employee = await _context.Employees
-                                 .FirstOrDefaultAsync(e => e.Code == code);
-            return employee;
-        }
+       
 
         public async  Task<Employee?> GetEmployeeByIdAsync(long id)
         {
@@ -40,19 +35,19 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             return employee;
         }
 
-        public async Task SetEmployeeInactiveAsync(string code)//agar ishdan ketsa 
-        {
-            var employee = await _context.Employees
-                                  .FirstOrDefaultAsync(e => e.Code == code);
-            if (employee != null)
-            {
-                employee.IsActive = false;
-            }
-            else
-            {
-                throw new Exception($"Employee with code {code} not found.");
-            }
-        }
+        //public async Task SetEmployeeInactiveAsync(string code)//agar ishdan ketsa 
+        //{
+        //    var employee = await _context.Employees
+        //                          .FirstOrDefaultAsync(e => e.Code == code);
+        //    if (employee != null)
+        //    {
+        //        employee.IsActive = false;
+        //    }
+        //    else
+        //    {
+        //        throw new Exception($"Employee with code {code} not found.");
+        //    }
+        //}
 
         public async Task UpdateEmployeeAsync(Employee employee)
         {
@@ -82,26 +77,41 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
 
         }
 
-        public async Task UpdateScheduleByICCodeAsync(string code)
-        {
-            var schedule = await _context.EmployeeSchedules
-                                         .Include(s => s.Employee) 
-                                         .FirstOrDefaultAsync(s => s.Employee != null && s.Employee.Code == code);
+        //public async Task UpdateScheduleByICCodeAsync(string code)
+        //{
+        //    var schedule = await _context.EmployeeSchedules
+        //                                 .Include(s => s.Employee) 
+        //                                 .FirstOrDefaultAsync(s => s.Employee != null && s.Employee.Code == code);
 
-            if (schedule == null)
-            {
-                return;
-            }
-            await _context.SaveChangesAsync();
-        }
+        //    if (schedule == null)
+        //    {
+        //        return;
+        //    }
+        //    await _context.SaveChangesAsync();
+        //}
 
         public async Task<ICollection<Employee>> GetAllActiveEmployeesAsync()
         {
             return await _context.Employees
-                                .OrderBy(e => e.FullName)
+                                .OrderBy(e => e.UserName)
                                 .Where(e => e.IsActive)
                                 .ToListAsync();
 
+        }
+
+        public Task SetEmployeeInactiveAsync(string code)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task UpdateScheduleByICCodeAsync(string code)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Employee?> GetEmployeeByICCodeAsync(string code)
+        {
+            throw new NotImplementedException();
         }
     }
     }

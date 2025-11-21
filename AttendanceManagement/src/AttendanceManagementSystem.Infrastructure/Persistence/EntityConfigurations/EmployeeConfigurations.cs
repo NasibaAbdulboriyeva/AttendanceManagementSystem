@@ -11,40 +11,49 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
             builder.ToTable("Employees");
             builder.HasKey(e => e.EmployeeId);
 
-            builder.Property(e => e.FullName)
-                   .IsRequired()
-                   .HasMaxLength(250);
+            builder.Property(e => e.UserName)
+                    .IsRequired()
+                    .HasMaxLength(150);
 
-            builder.Property(e => e.Code)
-                   .HasMaxLength(50);
+            builder.HasIndex(e => e.UserName)
+                   .IsUnique();
+
+            builder.Property(e => e.CardId)
+                    .IsRequired();
+
+            builder.Property(e => e.CardNumber)
+                    .IsRequired();
+
+            builder.HasIndex(e => e.CardNumber)
+                   .IsUnique();
 
             builder.Property(e => e.IsActive)
-                   .IsRequired()
-                   .HasDefaultValue(true);
-
+                    .IsRequired()
+                    .HasDefaultValue(true);
             builder.Property(e => e.CreatedAt)
-                   .IsRequired()
-                   .HasColumnType("datetime2")
-                   .HasDefaultValueSql("GETDATE()");
-            builder.Property(e => e.ModifiedAt)
-                 .IsRequired()
-                 .HasColumnType("datetime2")
-                 .HasDefaultValueSql("GETDATE()");
-            builder.HasMany(e => e.AttendanceLogs)
-                   .WithOne(al => al.Employee)
-                   .HasForeignKey(al => al.EmployeeId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                    .IsRequired()
+                    .HasColumnType("datetime2")
+                    .HasDefaultValueSql("GETDATE()");
 
+            builder.Property(e => e.ModifiedAt)
+                    .IsRequired()
+                    .HasColumnType("datetime2")
+                    .HasDefaultValueSql("GETDATE()");
+
+            builder.HasMany(e => e.AttendanceLogs)
+                    .WithOne(al => al.Employee)
+                    .HasForeignKey(al => al.EmployeeId)
+                    .OnDelete(DeleteBehavior.Restrict);
             builder.HasMany(e => e.CurrentAttendanceLogs)
-                   .WithOne(es => es.Employee)
-                   .HasForeignKey(es => es.EmployeeId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                    .WithOne(es => es.Employee)
+                    .HasForeignKey(es => es.EmployeeId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(e => e.EmployeeSchedule)
-                   .WithOne(es => es.Employee)
-                   .HasForeignKey<EmployeeSchedule>(es => es.EmployeeId)
-                   .IsRequired(false)
-                   .OnDelete(DeleteBehavior.Restrict);
+                    .WithOne(es => es.Employee)
+                    .HasForeignKey<EmployeeSchedule>(es => es.EmployeeId)
+                    .IsRequired(false) 
+                    .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -1,0 +1,45 @@
+﻿@model AttendanceManagementSystem.Api.Models.SyncViewModel // O'z namespace'ingizni qo'ying
+
+@{
+    ViewData["Title"] = "AttendanceLoglani bazaga saqlash ";
+}
+
+<div class="container mt-5">
+    <h2>@ViewData["Title"]</h2>
+    <hr />
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        // Muvaffaqiyatli xabarni yashil rangda ko'rsatish
+        var alertClass = Model.Message.StartsWith("✅") ? "alert-success" : "alert-danger";
+
+        <div class="alert @alertClass">
+            <strong>Natija:</strong> @Model.Message
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">TTLock Loglarni Bazaga Yuklash</h5>
+            <p class="card-text">Tanlangan qulf (Lock ID) uchun loglar TTLock serveridan tortib olinib, bazaga saqlanadi.</p>
+
+            <form asp-action="Index" method="post">
+                <div class="form-group mb-3">
+                    <label asp-for="LockId"></label>
+
+                    <input asp-for="LockId" class="form-control" placeholder="Masalan: 12345" />
+
+                    <span asp-validation-for="LockId" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-3">
+                    <i class="fas fa-sync-alt"></i> Sinxronizatsiyani Boshlash
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
