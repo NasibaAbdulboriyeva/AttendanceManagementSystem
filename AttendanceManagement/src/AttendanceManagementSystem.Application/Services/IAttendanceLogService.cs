@@ -4,11 +4,10 @@ namespace AttendanceManagementSystem.Application.Services
 {
     public interface IAttendanceLogService
     {
-        Task<int> SyncAttendanceLogsAsync(int lockId,DateTimeOffset? startDate = null, DateTimeOffset? endDate = null);
-        Task<ICollection<AttendanceLog>> GetLogsByEmployeeIdAsync(int employeeId, DateTime startDate, DateTime endDate);
+        Task<int> SyncAttendanceLogsAsync(DateTimeOffset? startDate , DateTimeOffset? endDate);
+        Task<ICollection<AttendanceLog>> GetLogsByEmployeeIdAsync(long employeeId, DateTime startDate, DateTime endDate);
 
         Task<ICollection<AttendanceLog>> GetLogsForAllEmployeesByDayAsync(DateTime targetDate);//usha kunga tegishlisini olish
 
-        Task<ICollection<AttendanceLog>> GetLogsForEmployeeAndPeriodAsync(long employeeId, DateTime startDate, DateTime endDate);
     }
 }

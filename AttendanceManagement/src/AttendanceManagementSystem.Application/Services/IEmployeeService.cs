@@ -1,6 +1,4 @@
 ﻿using AttendanceManagementSystem.Application.DTOs;
-
-
 namespace AttendanceManagementSystem.Application.Services
 {
     public interface IEmployeeService
@@ -11,5 +9,6 @@ namespace AttendanceManagementSystem.Application.Services
         Task<EmployeeDto?> GetEmployeeByICCodeAsync(string code);
         Task DeactivateEmployeeAsync(string code);
         Task UpdateScheduleByICCodeAsync(string code);
+        Task<(int CardsSynced, int FingerprintsSynced)> SyncEmployeeDataAsync();
     }
 }

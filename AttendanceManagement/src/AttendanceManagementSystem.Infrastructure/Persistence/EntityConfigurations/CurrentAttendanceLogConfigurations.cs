@@ -22,8 +22,10 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
 
             builder.Property(c => c.Description)
                     .HasMaxLength(500)
-                    .IsRequired(false); 
-
+                    .IsRequired(false);
+            builder.Property(c => c.DayOfWeek)
+                 .IsRequired()
+                 .HasConversion<string>();
             builder.Property(c => c.IsJustified)//ogohlatirilganmi 
                     .IsRequired();
 
@@ -47,6 +49,11 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
 
             builder.Property(e => e.CreatedAt)
                     .IsRequired()
+                    .HasColumnType("datetime2")
+                    .HasDefaultValueSql("GETDATE()");
+
+            builder.Property(e => e.ModifiedAt)
+                    .IsRequired(false)
                     .HasColumnType("datetime2")
                     .HasDefaultValueSql("GETDATE()");
 

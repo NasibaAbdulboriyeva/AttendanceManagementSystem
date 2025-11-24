@@ -1,113 +1,129 @@
-﻿using AttendanceManagementSystem.Application.Abstractions;
+﻿using AttendanceManagementSystem.Api.Configurations;
+using AttendanceManagementSystem.Application.Abstractions;
 using AttendanceManagementSystem.Application.DTOs;
 using AttendanceManagementSystem.Domain.Entities;
+using Microsoft.Extensions.Options;
 
 namespace AttendanceManagementSystem.Application.Services
 {
     public class AttendanceLogService : IAttendanceLogService
     {
+        private readonly TTLockSettings _settings;
         private readonly ITTLockService _ttLockService;
         private readonly IAttendanceLogRepository _logRepository;
+        private readonly IEmployeeRepository _employeeRepository;
 
-        public AttendanceLogService(ITTLockService ttLockService, IAttendanceLogRepository logRepository)
+    public AttendanceLogService(
+        ITTLockService ttLockService,
+        IAttendanceLogRepository logRepository,
+        IEmployeeRepository employeeRepository, IOptions<TTLockSettings> settings)
         {
             _ttLockService = ttLockService;
             _logRepository = logRepository;
+            _employeeRepository = employeeRepository;
+            _settings = settings.Value;
         }
 
-        public async Task<int> SyncAttendanceLogsAsync(int lockId, DateTimeOffset? startDate = null, DateTimeOffset? endDate = null)
+        public async Task<int> SyncAttendanceLogsAsync(DateTimeOffset? startDate, DateTimeOffset? endDate )
         {
+            var lockId = _settings.LockId;
 
-            DateTimeOffset lastSyncTime = await GetLastSyncTimeAsync(lockId);
-            long startTimestampMs = lastSyncTime.ToUnixTimeMilliseconds();
-            long endTimestampMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            DateTimeOffset syncStart = startDate ?? await GetLastSyncTimeAsync(lockId);
 
-            try
+            DateTimeOffset syncEnd = endDate ?? DateTimeOffset.UtcNow;
+
+            long startTimestampMs = syncStart.ToUnixTimeMilliseconds();
+            long endTimestampMs = syncEnd.ToUnixTimeMilliseconds();
+
+            var ttLockRecords = await _ttLockService.GetAllAttendanceLockRecordsAsync( startDate: startTimestampMs,endDate: endTimestampMs);
+
+            if (ttLockRecords == null || !ttLockRecords.Any())
             {
-                var ttLockRecords = await _ttLockService.GetAllAttendanceLockRecordsAsync(
-                    lockId: lockId,
-                    startDate: startTimestampMs,
-                    endDate: endTimestampMs
-                );
+                return 0;
 
-                if (ttLockRecords == null || !ttLockRecords.Any())
-                {
-                    return 0;
-                }
-
-                var logsToSave = new List<AttendanceLog>();
-
-                foreach (var recordDto in ttLockRecords)
-                {
-
-                    DateTimeOffset logTime = ParseTimestampToDateTimeOffset(recordDto.LockDate);
-                    var logEntity = MapToAttendanceLog(recordDto);
-                    if (logEntity.Status == AttendanceStatus.Success && logEntity != null)
-                    {
-                        logsToSave.Add(logEntity);
-                    }
-                }
-
-                if (logsToSave.Any())
-                {
-                    await _logRepository.AddLogsAsync(logsToSave);
-                }
-
-                return logsToSave.Count;
             }
 
-            catch (Exception ex)
+            // 1. Barcha foydalanuvchilarni lug'atga olish
+            var allUsernames = ttLockRecords
+                .Select(r => r.Username)
+                .Where(u => !string.IsNullOrEmpty(u))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            IReadOnlyDictionary<string, Employee> employeeLookup =
+                await _employeeRepository.GetEmployeesByUsernamesAsync(allUsernames);
+
+            var logsToSave = new List<AttendanceLog>();
+
+            foreach (var recordDto in ttLockRecords)
             {
-                throw;
+                var logEntity = MapToAttendanceLog(recordDto, employeeLookup);
+                if (logEntity != null)
+                {
+                    logsToSave.Add(logEntity);
+                }
             }
+
+            if (logsToSave.Any())
+            {
+                await _logRepository.AddLogsAsync(logsToSave);
+            }
+
+            return logsToSave.Count;
         }
 
-        public Task<ICollection<AttendanceLog>> GetLogsByEmployeeIdAsync(int employeeId, DateTime startDate, DateTime endDate)
+        private AttendanceLog? MapToAttendanceLog(TTLockRecordDto dto, IReadOnlyDictionary<string, Employee> employeeLookup)
         {
-            return _logRepository.GetLogsByEmployeeIdAsync(employeeId, startDate, endDate);
+            DateTimeOffset logTimeOffset = DateTimeOffset.FromUnixTimeMilliseconds(dto.LockDate);
+
+            AttendanceStatus status = dto.Success ==1
+                ? AttendanceStatus.Success
+                : AttendanceStatus.Unknown;
+
+            if (string.IsNullOrEmpty(dto.Username) || !employeeLookup.TryGetValue(dto.Username, out var employee))
+            {
+                return null;
+
+            }
+
+            return new AttendanceLog
+            {
+                EmployeeId = employee.EmployeeId,
+                RecordId = dto.RecordId,
+                RecordedTime = logTimeOffset.LocalDateTime,
+                Status = status,
+                RawUsername = dto.Username,
+                CreatedAt = DateTime.UtcNow
+               
+            };
+        }
+
+        public Task<ICollection<AttendanceLog>> GetLogsByEmployeeIdAsync(long employeeId, DateTime startDate, DateTime endDate)
+        {
+            var attendanceLog = _logRepository.GetLogsForEmployeeAndPeriodAsync(employeeId, startDate, endDate);
+            if (attendanceLog == null)
+            {
+                throw new Exception("No attendanceLogs found for the specified employee and date range.");
+            }
+            return attendanceLog;
         }
 
         public Task<ICollection<AttendanceLog>> GetLogsForAllEmployeesByDayAsync(DateTime targetDate)
         {
-            return _logRepository.GetLogsForAllEmployeesByDayAsync(targetDate);
-        }
-
-        public Task<ICollection<AttendanceLog>> GetLogsForEmployeeAndPeriodAsync(long employeeId, DateTime startDate, DateTime endDate)
-        {
-            return _logRepository.GetLogsByEmployeeIdAsync(employeeId, startDate, endDate);
-        }
-
-
-        private DateTimeOffset ParseTimestampToDateTimeOffset(long milliseconds)
-        {
-            return DateTimeOffset.FromUnixTimeMilliseconds(milliseconds);
-        }
-
-        private Task<DateTimeOffset> GetLastSyncTimeAsync(int lockId)
-        {
-            return Task.FromResult(DateTimeOffset.UtcNow.AddDays(-30));
-        }
-
-        private AttendanceLog MapToAttendanceLog(TTLockRecordDto dto)
-        {
-
-            DateTimeOffset logTimeOffset = DateTimeOffset.FromUnixTimeMilliseconds(dto.LockDate);
-
-            AttendanceStatus status = dto.Success == 0
-                                        ? AttendanceStatus.Success
-                                        : AttendanceStatus.Unknown;
-
-            long mappedEmployeeId = 0;
-
-            return new AttendanceLog
+            var attendanceLog = _logRepository.GetLogsForAllEmployeesByDayAsync(targetDate);
+            if (attendanceLog == null)
             {
-                EmployeeId = mappedEmployeeId,
-                RecordedTime = logTimeOffset.UtcDateTime,
-                Status = status,
-                RawUsername = dto.Username ?? dto.KeyboardPwd ?? dto.RecordId.ToString(),
-                CreatedAt = DateTime.UtcNow
+                throw new Exception("No attendanceLogs found for the specified date.");
 
-            };
+            }
+            return attendanceLog;
+        }
+
+        private Task<DateTimeOffset> GetLastSyncTimeAsync(string lockId)
+        {
+            // Bu yerga oxirgi muvaffaqiyatli sinxronizatsiya vaqtini saqlash mexanizmi qo‘yilishi mumkin
+            return Task.FromResult(DateTimeOffset.UtcNow.AddDays(-31));
         }
     }
+
 }

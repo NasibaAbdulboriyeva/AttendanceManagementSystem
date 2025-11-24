@@ -1,6 +1,7 @@
-﻿@model AttendanceManagementSystem.Api.Models.SyncViewModel // O'z namespace'ingizni qo'ying
+﻿@model AttendanceManagementSystem.Api.Models.SyncViewModel
 
 @{
+    // Title saqlangan
     ViewData["Title"] = "AttendanceLoglani bazaga saqlash ";
 }
 
@@ -10,36 +11,45 @@
 
     @if (!string.IsNullOrEmpty(Model.Message))
     {
-        // Muvaffaqiyatli xabarni yashil rangda ko'rsatish
         var alertClass = Model.Message.StartsWith("✅") ? "alert-success" : "alert-danger";
 
-        <div class="alert @alertClass">
-            <strong>Natija:</strong> @Model.Message
-        </div>
+            <div class="alert @alertClass">
+                <strong>Natija:</strong> @Model.Message
+            </div>
     }
 
     <div class="card shadow-sm">
         <div class="card-body">
             <h5 class="card-title">TTLock Loglarni Bazaga Yuklash</h5>
-            <p class="card-text">Tanlangan qulf (Lock ID) uchun loglar TTLock serveridan tortib olinib, bazaga saqlanadi.</p>
+            <p class="card-text">Tanlangan qulf (Lock ID **konfiguratsiyadan olinadi**) uchun loglar TTLock serveridan tortib olinib, bazaga saqlanadi.</p>
 
             <form asp-action="Index" method="post">
+
+                @* LockId maydoni olib tashlandi, endi u Service/Controller'dan olinadi *@
+                @* Agar LockId Modelda qolsa, uni Hidden Field (yashirin maydon) qilib qoldirish mumkin,
+                   ammo agar u doimiy ravishda config dan olinsa, bunga hojat yo'q. *@
+
                 <div class="form-group mb-3">
-                    <label asp-for="LockId"></label>
+                    <label asp-for="StartDate">Boshlanish sanasi</label>
+                    <input asp-for="StartDate" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                </div>
 
-                    <input asp-for="LockId" class="form-control" placeholder="Masalan: 12345" />
-
-                    <span asp-validation-for="LockId" class="text-danger"></span>
+                <div class="form-group mb-3">
+                    <label asp-for="EndDate">Tugash sanasi</label>
+                    <input asp-for="EndDate" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="EndDate" class="text-danger"></span>
                 </div>
 
                 <button type="submit" class="btn btn-primary mt-3">
                     <i class="fas fa-sync-alt"></i> Sinxronizatsiyani Boshlash
                 </button>
+
             </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+        <partial name="_ValidationScriptsPartial" />
 }

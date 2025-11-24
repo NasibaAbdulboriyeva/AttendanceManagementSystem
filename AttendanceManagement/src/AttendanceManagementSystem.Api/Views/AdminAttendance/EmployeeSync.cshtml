@@ -1,0 +1,45 @@
+﻿@model AttendanceManagementSystem.Api.Models.SyncViewModel 
+
+@{
+    ViewData["Title"] = "Xodimlarni TTLock bilan sinxronlash";
+}
+
+<div class="container mt-5">
+    <h2>@ViewData["Title"]</h2>
+    <hr />
+
+    @if (!string.IsNullOrEmpty(Model.Message))
+    {
+        // Muvaffaqiyatli xabarni yashil rangda ko'rsatish
+        var alertClass = Model.Message.StartsWith("✅") ? "alert-success" : "alert-danger";
+
+        <div class="alert @alertClass">
+            <strong>Natija:</strong> @Model.Message
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">TTLock Xodimlar Ma'lumotlarini Yangilash</h5>
+            <p class="card-text">
+                TTLock serveridan barcha **IC Card** va **Fingerprint** yozuvlari yuklab olinadi.
+                Bazada mavjud xodimlar yangilanadi, mavjud bo'lmaganlari esa qo'shiladi.
+            </p>
+
+            <form asp-action="EmployeeSync" method="post">
+
+                @* 💡 TUZATILGAN: LockId.HasValue sharti olib tashlandi, endi maydon har doim ko'rinadi. *@
+               
+
+
+                <button type="submit" class="btn btn-success mt-3">
+                    <i class="fas fa-user-plus"></i> Xodimlarni Sinxronlashni Boshlash
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

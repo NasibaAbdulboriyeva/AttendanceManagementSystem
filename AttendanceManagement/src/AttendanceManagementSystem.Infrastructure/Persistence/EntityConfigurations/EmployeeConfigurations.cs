@@ -1,7 +1,6 @@
 ﻿using AttendanceManagementSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
 namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurations
 {
     public class EmployeeConfigurations : IEntityTypeConfiguration<Employee>
@@ -19,13 +18,16 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
                    .IsUnique();
 
             builder.Property(e => e.CardId)
-                    .IsRequired();
-
+                    .IsRequired(false);
+            builder.Property(e => e.FingerprintId)
+                   .IsRequired(false);
             builder.Property(e => e.CardNumber)
-                    .IsRequired();
+                    .IsRequired(false);
 
             builder.HasIndex(e => e.CardNumber)
-                   .IsUnique();
+                   .IsUnique(false);
+            builder.HasIndex(e => e.FingerprintNumber)
+                  .IsUnique(false);
 
             builder.Property(e => e.IsActive)
                     .IsRequired()
@@ -36,7 +38,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
                     .HasDefaultValueSql("GETDATE()");
 
             builder.Property(e => e.ModifiedAt)
-                    .IsRequired()
                     .HasColumnType("datetime2")
                     .HasDefaultValueSql("GETDATE()");
 
@@ -44,6 +45,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
                     .WithOne(al => al.Employee)
                     .HasForeignKey(al => al.EmployeeId)
                     .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasMany(e => e.CurrentAttendanceLogs)
                     .WithOne(es => es.Employee)
                     .HasForeignKey(es => es.EmployeeId)

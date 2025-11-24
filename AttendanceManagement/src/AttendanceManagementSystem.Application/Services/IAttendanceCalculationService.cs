@@ -1,6 +1,4 @@
 ﻿using AttendanceManagementSystem.Application.DTOs;
-using AttendanceManagementSystem.Domain.Entities;
-
 
 namespace AttendanceManagementSystem.Application.Services
 {
@@ -10,6 +8,7 @@ namespace AttendanceManagementSystem.Application.Services
             string employeeCode,
             DateTime startDate,
             DateTime endDate);
+        Task<DateTime?> GetFirstEntryTimeForEmployeeByDayAsync(long employeeId, DateTime targetDate);
         Task<ICollection<CalculatedDailyLogDto>> GetLateArrivalsForPeriodAsync(
             string employeeCode,
             DateTime startDate,

@@ -8,7 +8,7 @@ namespace AttendanceManagementSystem.Application.DTOs
 {
     public class TTLockFingerprintDto
     {
-        public long FingerprintId { get; set; } 
+        public int FingerprintId { get; set; } 
         public int LockId { get; set; }
         public string? FingerprintNumber { get; set; } 
         public int FingerprintType { get; set; } 
@@ -16,6 +16,6 @@ namespace AttendanceManagementSystem.Application.DTOs
         public long StartDate { get; set; }
         public long EndDate { get; set; } 
         public long CreateDate { get; set; } 
-        public string? SenderUsername { get; set; }
+       
     }
 }
