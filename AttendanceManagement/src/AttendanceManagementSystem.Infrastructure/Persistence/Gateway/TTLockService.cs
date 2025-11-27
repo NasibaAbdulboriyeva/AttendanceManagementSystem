@@ -7,9 +7,7 @@ using System.Net.Http.Json;
 
 namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
 {
-    // Eslatma: TTLockSettings, TTLockGenericResponse<T>, TTLockRecordDto va TTLockResponse (TTLockGenericResponse<TTLockRecordDto>) 
-    // DTO/Modelarining mavjudligi va to'g'ri ishlashi talab qilinadi.
-
+  
     public class TTLockService : ITTLockService
     {
         private readonly TTLockSettings _settings;
@@ -31,12 +29,9 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
                 _logger.LogCritical("TTLockApiSettings: BaseUrl konfiguratsiyada topilmadi.");
                 throw new InvalidOperationException("TTLock Base URL konfiguratsiyada mavjud emas.");
             }
-            // BaseAddress o'rnatish
             _httpClient.BaseAddress = new Uri(_settings.BaseUrl);
         }
 
-        // --- 1. Lock Recordlarini Sahifalash Mantig'i (O'zgartirilmadi) ---
-        // Bu metodda pagination mantig'ini olib tashlash so'ralmagan, shuning uchun u qoladi.
         public async Task<ICollection<TTLockRecordDto>> GetAllAttendanceLockRecordsAsync(
             long startDate,
             long endDate,
@@ -80,7 +75,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             }
         }
 
-        // --- 2. Lock Record Bir Sahifasini Olish (O'zgartirilmadi) ---
         private async Task<TTLockResponse?> GetLockRecordsPageAsync(long startDate, long endDate, int pageNo,int pageSize, int? recordType)
         {
             long currentDateMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -106,7 +100,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // TTLockResponse turi TTLockGenericResponse<TTLockRecordDto> bo'lishi kerak.
                     return await response.Content.ReadFromJsonAsync<TTLockResponse>();
                 }
 
@@ -122,9 +115,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             }
         }
 
-        // ---------------------------------------------------------------------
-        // ## 💳 IC Card Records uchun Pagination (To'liq Qayta Yozilgan)
-        // ---------------------------------------------------------------------
+     
         public async Task<ICollection<TTLockIcCardDto>> GetAllIcCardRecordsAsync( string? searchStr = null, int orderBy = 1)
         {
             const string endpoint = "identityCard/list";
@@ -139,7 +130,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             {
                 long dateTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-                // URL tuzish
+          
                 var url = $"{endpoint}?" +
                           $"clientId={_settings.ClientId}&" +
                           $"accessToken={_settings.AccessToken}&" +
@@ -156,7 +147,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
 
                 try
                 {
-                    // TTLockGenericResponse<TTLockIcCardDto> turiga deserialize qilish
                     var response = await _httpClient.GetFromJsonAsync<TTLockGenericResponse<TTLockIcCardDto>>(url);
 
                     if (response?.List != null && response.List.Any())
@@ -189,9 +179,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             return allRecords;
         }
 
-        // ---------------------------------------------------------------------
-        // ## 👆 Fingerprint Records uchun Pagination (To'liq Qayta Yozilgan)
-        // ---------------------------------------------------------------------
+      
         public async Task<ICollection<TTLockFingerprintDto>> GetAllFingerprintsPaginatedAsync(
             string? searchStr = null, int orderBy = 1)
         {
@@ -207,7 +195,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             {
                 long dateTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-                // URL tuzish
                 var url = $"{endpoint}?" +
                           $"clientId={_settings.ClientId}&" +
                           $"accessToken={_settings.AccessToken}&" +
@@ -224,7 +211,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
 
                 try
                 {
-                    // TTLockGenericResponse<TTLockFingerprintDto> turiga deserialize qilish
                     var response = await _httpClient.GetFromJsonAsync<TTLockGenericResponse<TTLockFingerprintDto>>(url);
 
                     if (response?.List != null && response.List.Any())

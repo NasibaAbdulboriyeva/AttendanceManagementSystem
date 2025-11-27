@@ -10,7 +10,7 @@
 
     @if (!string.IsNullOrEmpty(Model.Message))
     {
-        // Muvaffaqiyatli xabarni yashil rangda ko'rsatish
+        // succes  yashil rangda ko'rsatish
         var alertClass = Model.Message.StartsWith("✅") ? "alert-success" : "alert-danger";
 
         <div class="alert @alertClass">
@@ -28,10 +28,7 @@
 
             <form asp-action="EmployeeSync" method="post">
 
-                @* 💡 TUZATILGAN: LockId.HasValue sharti olib tashlandi, endi maydon har doim ko'rinadi. *@
-               
-
-
+          
                 <button type="submit" class="btn btn-success mt-3">
                     <i class="fas fa-user-plus"></i> Xodimlarni Sinxronlashni Boshlash
                 </button>

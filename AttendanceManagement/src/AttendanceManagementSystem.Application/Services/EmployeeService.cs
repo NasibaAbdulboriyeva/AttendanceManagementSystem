@@ -2,6 +2,7 @@
 using AttendanceManagementSystem.Application.DTOs;
 using AttendanceManagementSystem.Domain.Entities;
 
+
 namespace AttendanceManagementSystem.Application.Services
 {
     public class EmployeeService : IEmployeeService
@@ -133,19 +134,189 @@ namespace AttendanceManagementSystem.Application.Services
             return syncedCount;
         }
 
-        // Yordamchi metod: Loglash uchun ID olish
-        private long GetTTLockId<T>(T ttUser) where T : class
+
+
+        public async Task DeactivateEmployeeAsync(long id)
         {
-            if (ttUser is TTLockIcCardDto icCardDto) return icCardDto.CardId;
-            if (ttUser is TTLockFingerprintDto fingerprintDto) return fingerprintDto.FingerprintId;
-            return 0;
+            var employee = await _employeeRepository.GetEmployeeByIdAsync(id); // Kod orqali qidirish
+            if (employee == null)
+            {
+                throw new KeyNotFoundException($"Xodim {id} idsi bo'yicha topilmadi.");
+            }
+
+            employee.IsActive = false;
+            employee.ModifiedAt = DateTime.UtcNow;
+            await _employeeRepository.UpdateEmployeeAsync(employee);
         }
 
-        public Task<long> AddEmployeeAsync(EmployeeCreateDto employeeCreateDto) => throw new NotImplementedException();
-        public Task DeactivateEmployeeAsync(string code) => throw new NotImplementedException();
-        public Task<ICollection<EmployeeDto>> GetActiveEmployeesAsync() => throw new NotImplementedException();
-        public Task<ICollection<EmployeeDto>> GetAllEmployeesAsync() => throw new NotImplementedException();
-        public Task<EmployeeDto?> GetEmployeeByICCodeAsync(string code) => throw new NotImplementedException();
-        public Task UpdateScheduleByICCodeAsync(string code) => throw new NotImplementedException();
+
+        public async Task<ICollection<EmployeeDto>> GetAllEmployeesAsync()
+        {
+            var employees = await _employeeRepository.GetAllEmployeesAsync();
+            // Entity ni DTO ga konvertatsiya qilish
+            return employees.Select(MapToDto).ToList();
+        }
+
+        public async Task<EmployeeDto?> GetEmployeeByIdAsync(long id)
+        {
+            var employee = await _employeeRepository.GetEmployeeByIdAsync(id);
+            if (employee == null)
+            {
+                throw new Exception($"Xodim {id} idsi bo'yicha topilmadi.");
+            }
+            return MapToDto(employee);
+        }
+        public async Task<long> AddEmployeeScheduleAsync(EmployeeScheduleDto scheduleDto)
+        {
+            if (scheduleDto == null)
+            {
+                throw new ArgumentNullException(nameof(scheduleDto), "Jadval ma'lumotlari bo'sh bo'lishi mumkin emas.");
+            }
+
+            if (scheduleDto.EmployeeId <= 0)
+            {
+                throw new ArgumentException("EmployeeId haqiqiy qiymatga ega bo'lishi kerak.", nameof(scheduleDto.EmployeeId));
+            }
+
+            var scheduleEntity = MapToEntity(scheduleDto);
+
+            // 3. Entity'ni Repository orqali bazaga saqlash
+            await _employeeRepository.AddEmployeeScheduleAsync(scheduleEntity);
+
+            // Agar Repository faqat bitta saqlash metodi bo'lsa, u SaveChangesAsync ni chaqiradi.
+
+            // 4. Saqlangan jadvalning ID sini qaytarish
+            return scheduleEntity.EmployeeScheduleId;
+        }
+
+        public async Task<EmployeeScheduleDto?> GetEmployeeScheduleByEmployeeIdAsync(long employeeId)
+        {
+            // 1. Repository orqali Schedule Entity'sini olish
+            var scheduleEntity = await _employeeRepository.GetScheduleByEmployeeIdAsync(employeeId);
+
+            if (scheduleEntity == null)
+            {
+                // Agar jadval topilmasa null qaytariladi
+                return null;
+            }
+
+            // 2. Entity'ni DTO'ga konvertatsiya qilish
+            // Bu yerda sizning umumiy IEmployeeMapper yoki maxsus IScheduleMapper dan foydalaniladi.
+            // Repozitoriyda yoki alohida Mapperda MapToDto(ScheduleEntity) metodi mavjud deb faraz qilamiz.
+            var scheduleDto = MapToDto(scheduleEntity); // IEmployeeMapper kengaytirilgan deb taxmin qilinadi
+
+            return scheduleDto;
+        }
+
+        /// <summary>
+        /// Mavjud ish jadvalini yangilaydi.
+        /// </summary>
+        public async Task UpdateEmployeeScheduleAsync(EmployeeScheduleDto scheduleDto)
+        {
+            if (scheduleDto == null)
+            {
+                throw new ArgumentNullException(nameof(scheduleDto), "Jadval ma'lumotlari bo'sh bo'lishi mumkin emas.");
+            }
+
+            // 1. Avval mavjud Schedule Entity'sini bazadan olib kelishimiz kerak
+            var existingSchedule = await _employeeRepository.GetScheduleByEmployeeIdAsync(scheduleDto.EmployeeId);
+
+            if (existingSchedule == null)
+            {
+                // Agar Schedule mavjud bo'lmasa, xato qaytarish yoki uni yangi qilib yaratish mumkin.
+                // Yangilash (Update) metodida, odatda, mavjud bo'lishi talab qilinadi.
+                throw new KeyNotFoundException($"Xodim {scheduleDto.EmployeeId} uchun jadval topilmadi. Avval yaratilishi kerak.");
+            }
+
+            // 2. DTO dagi ma'lumotlar bilan mavjud Entity'ni yangilash
+            // Bu qism odatda maxsus 'MapToEntity' (yoki 'UpdateEntity') metodi orqali amalga oshiriladi.
+
+            // Taxmin qilinadigan yangilash:
+            existingSchedule.ModifiedAt = DateTime.UtcNow;
+            existingSchedule.StartTime = scheduleDto.StartTime;
+            existingSchedule.EndTime = scheduleDto.EndTime;
+            // ... boshqa maydonlarni ham yangilang
+
+            // 3. Yangilangan Entity'ni Repository orqali bazaga saqlash
+            await _employeeRepository.UpdateScheduleAsync(existingSchedule);
+        }
+        public async Task<long> GetEmployeeIdByUsernameAsync(string username)
+        {
+            var employee = await _employeeRepository.GetEmployeeByUsernameAsync(username);
+
+            if (employee == null)
+            {
+                throw new KeyNotFoundException($"Xodim '{username}' foydalanuvchi nomi bo'yicha topilmadi.");
+            }
+
+
+            return employee.EmployeeId;
+        }
+        public EmployeeDto MapToDto(Employee employee)
+        {
+            return new EmployeeDto
+            {
+                UserName = employee.UserName,
+                CardId = employee.CardId,
+                CardNumber = employee.CardNumber,
+                FingerprintId = employee.FingerprintId,
+                FingerprintNumber = employee.FingerprintNumber,
+                IsActive = employee.IsActive,
+                CreatedAt = employee.CreatedAt,
+                ModifiedAt = employee.ModifiedAt
+            };
+        }
+        public EmployeeSchedule MapToEntity(EmployeeScheduleDto dto)
+        {
+            return new EmployeeSchedule
+            {
+                EmployeeId = dto.EmployeeId,
+                LimitInMinutes = dto.LimitInMinutes,
+                StartTime = dto.StartTime,
+                EndTime = dto.EndTime,
+                EmployementType = dto.EmployementType,
+                CreatedAt = DateTime.UtcNow,
+                ModifiedAt = default
+            };
+        }
+        private Employee MapToEntity(EmployeeDto dto)
+        {
+
+            return new Employee
+            {
+                UserName = dto.UserName,
+                CardId = dto.CardId,
+                CardNumber = dto.CardNumber,
+                FingerprintId = dto.FingerprintId,
+                FingerprintNumber = dto.FingerprintNumber,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+        }
+
+        private EmployeeScheduleDto MapToDto(EmployeeSchedule entity)
+        {
+            if (entity == null) return null!;
+
+            return new EmployeeScheduleDto
+            {
+                EmployeeId = entity.EmployeeId,
+                LimitInMinutes = entity.LimitInMinutes,
+                StartTime = entity.StartTime,
+                EndTime = entity.EndTime,
+                EmployementType = entity.EmployementType,
+            };
+        }
+
+        public async Task<ICollection<EmployeeDto>> GetAllActiveEmployeesAsync()
+        {
+            var employees = await _employeeRepository.GetAllActiveEmployeesAsync();
+            // Entity ni DTO ga konvertatsiya qilish
+            var activeEmployees = new List<EmployeeDto>();
+
+            activeEmployees = employees.Select(MapToDto).ToList();
+
+            return activeEmployees;
+        }
     }
 }

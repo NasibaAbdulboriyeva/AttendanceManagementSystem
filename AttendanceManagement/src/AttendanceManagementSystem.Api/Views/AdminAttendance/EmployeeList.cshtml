@@ -1,0 +1,50 @@
+﻿@model AttendanceManagementSystem.Api.Models.EmployeeListViewModel
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>ФИО Сотрудника</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var employee in Model.Employees)
+        {
+            <tr>
+                <td>@employee.FullName</td>
+                <td>
+                    @{
+                        // tekushiy data parametrlari
+                        var currentYear = DateTime.Now.Year;
+                        var currentMonth = DateTime.Now.Month;
+                    }
+
+                    <a asp-controller="AdminAttendance"
+                       asp-action="ViewCalendar"
+                       asp-route-year="@currentYear"
+                       asp-route-month="@currentMonth"
+                       class="btn btn-info btn-sm">
+                        <i class="fas fa-calendar-alt"></i> Просмотр табеля
+                    </a>
+      
+                </td>
+                <td>
+
+                    <form asp-controller="AdminAttendance"
+                          asp-action="Inactivate"
+                          asp-route-username="@employee.FullName"
+                          method="get"
+                          onsubmit="return confirm('DIQQAT! Rostan ham @employee.FullName xodimini inaktiv qilmoqchimisiz? U roʻyxatdan gʻoyib boʻladi va tizimga kira olmaydi.');"
+                          class="d-inline">
+
+                        @Html.AntiForgeryToken()
+
+
+                        <button type="submit" class="btn btn-danger btn-sm" title="Xodimni inaktiv qilish">
+                            <i class="fas fa-user-slash"></i> Inactive
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

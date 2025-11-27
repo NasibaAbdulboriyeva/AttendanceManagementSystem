@@ -3,11 +3,10 @@ using AttendanceManagementSystem.Domain.Entities;
 
 namespace AttendanceManagementSystem.Application.DTOs
 {
-    public class CalculatedDailyLogDto
+    public class CurrentAttendanceCalendar
     {
         public long EmployeeId { get; set; }
-        public string EmployeeCode { get; set; }
-        public string EmployeeFullName { get; set; }
+        public string? EmployeeFullName { get; set; }
         public TimeSpan ScheduledStartTime { get; set; }
         public int LateMinutesTotal { get; set; }
         public int RemainingLateMinutes { get; set; }

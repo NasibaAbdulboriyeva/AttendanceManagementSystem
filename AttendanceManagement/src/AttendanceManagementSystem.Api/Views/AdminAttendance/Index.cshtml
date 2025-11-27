@@ -1,48 +1,39 @@
 ﻿@model AttendanceManagementSystem.Api.Models.SyncViewModel
 
 @{
-    // Title saqlangan
-    ViewData["Title"] = "AttendanceLoglani bazaga saqlash ";
+    // Установлен заголовок
+    ViewData["Title"] = "Сохранение AttendanceLog в базу данных";
 }
 
 <div class="container mt-5">
     <h2>@ViewData["Title"]</h2>
     <hr />
 
+    @* Блок для отображения сообщения о результате *@
     @if (!string.IsNullOrEmpty(Model.Message))
     {
+        // Определяем класс для алерта в зависимости от успешности операции
         var alertClass = Model.Message.StartsWith("✅") ? "alert-success" : "alert-danger";
 
-            <div class="alert @alertClass">
-                <strong>Natija:</strong> @Model.Message
-            </div>
+        <div class="alert @alertClass">
+            <strong>Результат:</strong> @Model.Message
+        </div>
     }
 
     <div class="card shadow-sm">
         <div class="card-body">
-            <h5 class="card-title">TTLock Loglarni Bazaga Yuklash</h5>
-            <p class="card-text">Tanlangan qulf (Lock ID **konfiguratsiyadan olinadi**) uchun loglar TTLock serveridan tortib olinib, bazaga saqlanadi.</p>
+            <h5 class="card-title">Загрузка логов TTLock в Базу Данных</h5>
+            <p class="card-text">
+                Нажмите кнопку ниже, чтобы начать синхронизацию. Система автоматически определит дату последнего записанного лога
+                и запросит новые данные с этого момента.
+            </p>
 
             <form asp-action="Index" method="post">
-
-                @* LockId maydoni olib tashlandi, endi u Service/Controller'dan olinadi *@
-                @* Agar LockId Modelda qolsa, uni Hidden Field (yashirin maydon) qilib qoldirish mumkin,
-                   ammo agar u doimiy ravishda config dan olinsa, bunga hojat yo'q. *@
-
-                <div class="form-group mb-3">
-                    <label asp-for="StartDate">Boshlanish sanasi</label>
-                    <input asp-for="StartDate" type="datetime-local" class="form-control" />
-                    <span asp-validation-for="StartDate" class="text-danger"></span>
-                </div>
-
-                <div class="form-group mb-3">
-                    <label asp-for="EndDate">Tugash sanasi</label>
-                    <input asp-for="EndDate" type="datetime-local" class="form-control" />
-                    <span asp-validation-for="EndDate" class="text-danger"></span>
-                </div>
-
+                
+              
+                
                 <button type="submit" class="btn btn-primary mt-3">
-                    <i class="fas fa-sync-alt"></i> Sinxronizatsiyani Boshlash
+                    <i class="fas fa-sync-alt"></i> Начать Синхронизацию
                 </button>
 
             </form>

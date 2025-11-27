@@ -22,15 +22,23 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<ICollection<AttendanceLog>> GetLogsByEmployeeIdAsync(long employeeId, DateTime startDate, DateTime endDate)
+        public async Task<ICollection<AttendanceLog>> GetLogsByEmployeeAndMonthAsync(long employeeId, DateTime month)
         {
-            return await _context.AttendanceLogs
-               .AsNoTracking()
-               .Where(log => log.EmployeeId == employeeId &&
-                             log.RecordedTime.Date >= startDate.Date &&
-                             log.RecordedTime.Date <= endDate.Date)
-               .OrderBy(log=>log.RecordedTime)
-               .ToListAsync();
+            // 1. Oyning boshlanish va tugash sanalarini hisoblash
+            var startDate = new DateTime(month.Year, month.Month, 1);
+            var endDate = startDate.AddMonths(1); 
+
+            var logs = await _context.AttendanceLogs
+                .Where(log =>
+                    log.EmployeeId == employeeId &&
+                    log.RecordedTime.Date >= startDate.Date &&
+                    log.RecordedTime.Date < endDate.Date     
+                )
+                .OrderBy(log => log.RecordedTime) 
+                .AsNoTracking()
+                .ToListAsync();
+
+            return logs;
         }
         public async Task<ICollection<AttendanceLog>> GetLogsByEmployeeICCodeAsync(string code, DateTime startDate, DateTime endDate)
         {
@@ -55,7 +63,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             DateTime startDate,
             DateTime endDate)
         {
-           
+
             var query = _context.AttendanceLogs
 
                 .Where(log => log.EmployeeId == employeeId)
@@ -65,6 +73,20 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
                 .OrderBy(log => log.RecordedTime);
 
             return await query.ToListAsync();
+        }
+        public async Task<DateTime?> GetLastRecordedTimeAsync()
+        {
+            if (!await _context.AttendanceLogs.AnyAsync())
+            {
+                return null;
+            }
+
+            var lastTime = await _context.AttendanceLogs
+                .AsNoTracking()
+                .MaxAsync(log => log.RecordedTime);
+
+
+            return lastTime;
         }
     }
 }

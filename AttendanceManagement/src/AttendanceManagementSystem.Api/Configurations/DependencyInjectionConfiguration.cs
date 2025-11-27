@@ -12,10 +12,11 @@ namespace AttendanceManagementSystem.Api.Configurations
             builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             builder.Services.AddScoped<IEmployeeService, EmployeeService>();
             builder.Services.AddScoped<IAttendanceLogRepository, AttendanceLogRepository>();
-            builder.Services.AddScoped<IDoorActivityLogRepository, DoorActivityLogRepository>();
-            builder.Services.AddScoped<IEmployeeSummaryRepository, EmployeeSummaryRepository>();
-            //builder.Services.AddScoped<IUploadService, UploadService>();
             builder.Services.AddScoped<IAttendanceLogService, AttendanceLogService>();
+            builder.Services.AddScoped<ICurrentAttendanceLogRepository, CurrentAttendanceLogRepository>();
+            builder.Services.AddScoped<ICurrentAttendanceLogCalculationService, CurrentAttendanceLogCalculationService>();
+            //builder.Services.AddScoped<IUploadService, UploadService>();
+            //builder.Services.AddScoped<IDoorActivityLogRepository, DoorActivityLogRepository>();
             builder.Services.AddHttpClient<ITTLockService, TTLockService>();
             builder.Services.Configure<TTLockSettings>(
             builder.Configuration.GetSection("TTLockApiSettings"));

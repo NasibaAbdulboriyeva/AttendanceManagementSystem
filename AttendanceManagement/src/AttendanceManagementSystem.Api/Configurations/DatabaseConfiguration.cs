@@ -1,6 +1,6 @@
 ﻿using AttendanceManagementSystem.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-namespace AttendanceManagementSystem.Web.Configurations
+namespace AttendanceManagementSystem.Api.Configurations
 {
     public static class DatabaseConfiguration
     {

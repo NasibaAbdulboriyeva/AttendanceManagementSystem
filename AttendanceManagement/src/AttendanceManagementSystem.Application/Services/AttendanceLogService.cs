@@ -13,10 +13,7 @@ namespace AttendanceManagementSystem.Application.Services
         private readonly IAttendanceLogRepository _logRepository;
         private readonly IEmployeeRepository _employeeRepository;
 
-    public AttendanceLogService(
-        ITTLockService ttLockService,
-        IAttendanceLogRepository logRepository,
-        IEmployeeRepository employeeRepository, IOptions<TTLockSettings> settings)
+        public AttendanceLogService(ITTLockService ttLockService, IAttendanceLogRepository logRepository, IEmployeeRepository employeeRepository, IOptions<TTLockSettings> settings)
         {
             _ttLockService = ttLockService;
             _logRepository = logRepository;
@@ -24,26 +21,44 @@ namespace AttendanceManagementSystem.Application.Services
             _settings = settings.Value;
         }
 
-        public async Task<int> SyncAttendanceLogsAsync(DateTimeOffset? startDate, DateTimeOffset? endDate )
+        public async Task<int> SyncAttendanceLogsAsync()
         {
             var lockId = _settings.LockId;
 
-            DateTimeOffset syncStart = startDate ?? await GetLastSyncTimeAsync(lockId);
+            DateTime? lastRecordTime = await _logRepository.GetLastRecordedTimeAsync();
 
-            DateTimeOffset syncEnd = endDate ?? DateTimeOffset.UtcNow;
+            DateTimeOffset syncStart;
+
+            if (lastRecordTime.HasValue)
+            {
+                DateTimeOffset lastRecordOffset = new DateTimeOffset(lastRecordTime.Value, TimeSpan.Zero);
+                syncStart = lastRecordOffset.AddSeconds(2);
+            }
+            else
+            {
+                //bu agar bazada umuman log bomasa yani 1 chi yaratvolishchun kere 
+                // 30 kun oldingi hozgri kundan boshlab (naprimer)
+                syncStart = new DateTimeOffset(DateTime.UtcNow.AddDays(-30).Date, TimeSpan.Zero);
+            }
+
+            DateTimeOffset syncEnd = DateTimeOffset.UtcNow;
+
+            if (syncStart >= syncEnd)
+            {
+                return 0;
+            }
 
             long startTimestampMs = syncStart.ToUnixTimeMilliseconds();
             long endTimestampMs = syncEnd.ToUnixTimeMilliseconds();
 
-            var ttLockRecords = await _ttLockService.GetAllAttendanceLockRecordsAsync( startDate: startTimestampMs,endDate: endTimestampMs);
+            var ttLockRecords = await _ttLockService.GetAllAttendanceLockRecordsAsync(startDate: startTimestampMs,
+                endDate: endTimestampMs);
 
             if (ttLockRecords == null || !ttLockRecords.Any())
             {
                 return 0;
-
             }
 
-            // 1. Barcha foydalanuvchilarni lug'atga olish
             var allUsernames = ttLockRecords
                 .Select(r => r.Username)
                 .Where(u => !string.IsNullOrEmpty(u))
@@ -51,11 +66,13 @@ namespace AttendanceManagementSystem.Application.Services
                 .ToList();
 
             IReadOnlyDictionary<string, Employee> employeeLookup =
-                await _employeeRepository.GetEmployeesByUsernamesAsync(allUsernames);
-
+            await _employeeRepository.GetEmployeesByUsernamesAsync(allUsernames);
+            var sortedTtLockRecords = ttLockRecords
+            .OrderBy(ttRecord => ttRecord.LockDate)
+            .ToList();
             var logsToSave = new List<AttendanceLog>();
 
-            foreach (var recordDto in ttLockRecords)
+            foreach (var recordDto in sortedTtLockRecords)
             {
                 var logEntity = MapToAttendanceLog(recordDto, employeeLookup);
                 if (logEntity != null)
@@ -76,7 +93,7 @@ namespace AttendanceManagementSystem.Application.Services
         {
             DateTimeOffset logTimeOffset = DateTimeOffset.FromUnixTimeMilliseconds(dto.LockDate);
 
-            AttendanceStatus status = dto.Success ==1
+            AttendanceStatus status = dto.Success == 1
                 ? AttendanceStatus.Success
                 : AttendanceStatus.Unknown;
 
@@ -94,7 +111,7 @@ namespace AttendanceManagementSystem.Application.Services
                 Status = status,
                 RawUsername = dto.Username,
                 CreatedAt = DateTime.UtcNow
-               
+
             };
         }
 
@@ -116,14 +133,11 @@ namespace AttendanceManagementSystem.Application.Services
                 throw new Exception("No attendanceLogs found for the specified date.");
 
             }
+
             return attendanceLog;
         }
 
-        private Task<DateTimeOffset> GetLastSyncTimeAsync(string lockId)
-        {
-            // Bu yerga oxirgi muvaffaqiyatli sinxronizatsiya vaqtini saqlash mexanizmi qo‘yilishi mumkin
-            return Task.FromResult(DateTimeOffset.UtcNow.AddDays(-31));
-        }
+
     }
 
 }

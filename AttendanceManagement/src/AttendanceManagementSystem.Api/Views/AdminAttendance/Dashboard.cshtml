@@ -1,0 +1,61 @@
+﻿@{
+    // Sahifa nomi
+    ViewData["Title"] = "Админ-Панель Учета Посещаемости";
+}
+
+<div class="container mt-5">
+    <h2>@ViewData["Title"]</h2>
+    <hr />
+
+    <div class="row">
+
+        <div class="col-md-4 mb-4">
+            <div class="card text-center shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Синхронизация Логирования</h5>
+                    <p class="card-text">Загрузить новые лог-записи посещаемости с TTLock API.</p>
+                    <a asp-controller="AdminAttendance" asp-action="Index" class="btn btn-primary btn-block">
+                        <i class="fas fa-sync-alt"></i> Синхронизировать Логи
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card text-center shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Синхронизация Сотрудников</h5>
+                    <p class="card-text">Обновить данные сотрудников (карты, отпечатки) из TTLock.</p>
+                    <a asp-controller="AdminAttendance" asp-action="EmployeeSync" class="btn btn-warning btn-block">
+                        <i class="fas fa-users"></i> Синхронизировать Сотрудников
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card text-center shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Просмотр Табеля</h5>
+                    <p class="card-text">Перейти к списку сотрудников для просмотра ежемесячного отчета.</p>
+                    <a asp-controller="AdminAttendance" asp-action="EmployeeList" class="btn btn-success btn-block">
+                        <i class="fas fa-calendar-alt"></i> Календарь Посещаемости
+                    </a>
+                </div>
+            </div>
+        </div>
+        @* 4. ✅ YANGI: Barcha Jadvallarni Boshqarish *@
+        <div class="col-md-4 mb-4">
+            <div class="card text-center shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Управление Графиками</h5>
+                    <p class="card-text">Установить или изменить рабочее время и лимиты для всех сотрудников.</p>
+                    <a asp-controller="AdminAttendance" asp-action="ScheduleSetup" class="btn btn-info btn-block">
+                        <i class="fas fa-clock"></i> Настройка Графиков
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

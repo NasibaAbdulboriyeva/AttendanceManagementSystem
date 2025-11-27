@@ -1,5 +1,4 @@
 using AttendanceManagementSystem.Api.Configurations;
-using AttendanceManagementSystem.Web.Configurations;
 
 namespace AttendanceManagementSystem.Api
 {
@@ -32,7 +31,7 @@ namespace AttendanceManagementSystem.Api
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=AdminAttendance}/{action=Index}/{id?}");
+                pattern: "{controller=AdminAttendance}/{action=Dashboard}/{id?}");
 
             app.Run();
         }
