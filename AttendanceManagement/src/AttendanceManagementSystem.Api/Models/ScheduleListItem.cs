@@ -8,21 +8,20 @@ namespace AttendanceManagementSystem.Api.Models
         public long EmployeeId { get; set; }
         public long EmployeeScheduleId { get; set; }
 
-        [Display(Name = "EmployeeName")]
+        [Display(Name = "Ф.И.О.Cотрудника")]
         public string FullName { get; set; }
 
-        [Required(ErrorMessage = "Vaqt talab qilinadi")]
-        [Display(Name = "Boshlanishi")]
+        [Required(ErrorMessage = "Required field")]
+        [Display(Name = "Время прихода")]
         public TimeSpan StartTime { get; set; } 
 
-        [Required(ErrorMessage = "Vaqt talab qilinadi")]
-        [Display(Name = "Tugashi")]
+        [Display(Name = "Время уходa")]
         public TimeSpan EndTime { get; set; }
 
-        [Display(Name = "Limit (min)")]
+        [Display(Name = "Лимит (min)")]
         public int LimitInMinutes { get; set; } 
 
-        [Display(Name = "Turi")]
+        [Display(Name = "EmployementType")]
         public EmployementType EmployementType { get; set; }
     }
 }

@@ -1,7 +1,7 @@
 ﻿@model AttendanceManagementSystem.Api.Models.SyncViewModel 
 
 @{
-    ViewData["Title"] = "Xodimlarni TTLock bilan sinxronlash";
+    ViewData["Title"] = "Синхронизация сотрудников с TTLock";
 }
 
 <div class="container mt-5">
@@ -20,17 +20,17 @@
 
     <div class="card shadow-sm">
         <div class="card-body">
-            <h5 class="card-title">TTLock Xodimlar Ma'lumotlarini Yangilash</h5>
+            <h5 class="card-title">Обновление данных сотрудников TTLock</h5>
             <p class="card-text">
-                TTLock serveridan barcha **IC Card** va **Fingerprint** yozuvlari yuklab olinadi.
-                Bazada mavjud xodimlar yangilanadi, mavjud bo'lmaganlari esa qo'shiladi.
+                С сервера TTLock будут загружены все записи IC-карт и отпечатков пальцев.
+                Существующие в базе сотрудники будут обновлены, а отсутствующие — добавлены.
             </p>
 
             <form asp-action="EmployeeSync" method="post">
 
           
                 <button type="submit" class="btn btn-success mt-3">
-                    <i class="fas fa-user-plus"></i> Xodimlarni Sinxronlashni Boshlash
+                    <i class="fas fa-user-plus"></i> Запустить синхронизацию сотрудников
                 </button>
             </form>
         </div>

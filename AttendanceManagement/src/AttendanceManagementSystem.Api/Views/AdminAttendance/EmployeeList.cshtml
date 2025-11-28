@@ -20,6 +20,7 @@
 
                     <a asp-controller="AdminAttendance"
                        asp-action="ViewCalendar"
+                       asp-route-username="@employee.FullName"
                        asp-route-year="@currentYear"
                        asp-route-month="@currentMonth"
                        class="btn btn-info btn-sm">
@@ -28,22 +29,20 @@
       
                 </td>
                 <td>
+    @{
+        // Confirm matni
+        var confirmMessage = $"ВНИМАНИЕ! Вы действительно хотите деактивировать сотрудника {employee.FullName}? Он будет удален из списка и не сможет войти в систему.";
+    }
 
-                    <form asp-controller="AdminAttendance"
-                          asp-action="Inactivate"
-                          asp-route-username="@employee.FullName"
-                          method="get"
-                          onsubmit="return confirm('DIQQAT! Rostan ham @employee.FullName xodimini inaktiv qilmoqchimisiz? U roʻyxatdan gʻoyib boʻladi va tizimga kira olmaydi.');"
-                          class="d-inline">
-
-                        @Html.AntiForgeryToken()
-
-
-                        <button type="submit" class="btn btn-danger btn-sm" title="Xodimni inaktiv qilish">
-                            <i class="fas fa-user-slash"></i> Inactive
-                        </button>
-                    </form>
-                </td>
+    <a asp-controller="AdminAttendance"
+       asp-action="Inactivate"
+       asp-route-username="@employee.FullName"
+       onclick="return confirm('@confirmMessage')" 
+       class="btn btn-danger btn-sm"
+       title="Деактивация сотрудника">
+        <i class="fas fa-user-slash"></i> Inactive
+    </a>
+</td>
             </tr>
         }
     </tbody>

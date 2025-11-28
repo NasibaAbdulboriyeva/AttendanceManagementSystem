@@ -17,7 +17,6 @@ namespace AttendanceManagementSystem.Application.DTOs
         public TimeOnly LastLeavingTime { get; set; }//ketish vaqt 
         public int WorkedHours { get; set; }//kuniga qancha ishlagani 
         public DateOnly EntryDay { get; set; }
-        public DayOfWeek DayOfWeek { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? ModifiedAt { get; set; }
     }

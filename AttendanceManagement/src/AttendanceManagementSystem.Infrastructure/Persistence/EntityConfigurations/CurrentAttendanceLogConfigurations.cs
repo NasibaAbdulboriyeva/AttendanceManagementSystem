@@ -23,11 +23,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
             builder.Property(c => c.Description)
                     .HasMaxLength(500)
                     .IsRequired(false);
-            builder.Property(c => c.DayOfWeek)
-                 .IsRequired()
-                 .HasConversion<string>();
-            builder.Property(c => c.IsJustified)//ogohlatirilganmi 
-                    .IsRequired();
+           
 
             builder.Property(c => c.CalculatedAt)
                     .IsRequired()

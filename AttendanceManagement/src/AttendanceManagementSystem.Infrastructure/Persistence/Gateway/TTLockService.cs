@@ -7,7 +7,6 @@ using System.Net.Http.Json;
 
 namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
 {
-  
     public class TTLockService : ITTLockService
     {
         private readonly TTLockSettings _settings;
@@ -26,22 +25,19 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
 
             if (string.IsNullOrEmpty(_settings.BaseUrl))
             {
-                _logger.LogCritical("TTLockApiSettings: BaseUrl konfiguratsiyada topilmadi.");
-                throw new InvalidOperationException("TTLock Base URL konfiguratsiyada mavjud emas.");
+                _logger.LogCritical("TTLockApiSettings: BaseUrl не найден в конфигурации.");
+                throw new InvalidOperationException("Базовый URL TTLock не найден в конфигурации.");
             }
             _httpClient.BaseAddress = new Uri(_settings.BaseUrl);
         }
 
-        public async Task<ICollection<TTLockRecordDto>> GetAllAttendanceLockRecordsAsync(
-            long startDate,
-            long endDate,
-            int? recordType = null)
+        public async Task<ICollection<TTLockRecordDto>> GetAllAttendanceLockRecordsAsync(long startDate,long endDate,int? recordType = null)
         {
             var allRecords = new List<TTLockRecordDto>();
             int pageNo = 1;
             int totalPages = 1;
 
-            _logger.LogInformation("TTLock loglarni olish boshlandi. StartDate: {Start}", startDate);
+            _logger.LogInformation("Запуск получения логов TTLock. StartDate: {Start}", startDate);
 
             try
             {
@@ -52,7 +48,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
 
                     if (response == null || response.List == null)
                     {
-                        _logger.LogWarning("TTLock:  sahifa {PageNo} olinmadi. Muvaffaqiyatsiz yakunlandi.", pageNo);
+                        _logger.LogWarning("TTLock: Страница {PageNo} не получена. Завершено неудачно.", pageNo);
                         break;
                     }
 
@@ -60,17 +56,17 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
                     totalPages = response.Pages;
                     pageNo++;
 
-                    _logger.LogDebug("TTLockdan {PageNo}/{TotalPages} sahifa olindi. Yozuvlar soni: {Count}",  pageNo - 1, totalPages, allRecords.Count);
+                    _logger.LogDebug("Получена страница {PageNo} из {TotalPages} от TTLock. Количество записей: {Count}",  pageNo - 1, totalPages, allRecords.Count);
 
                     await Task.Delay(50);
                 } while (pageNo <= totalPages);
 
-                _logger.LogInformation("TTLockdan jami {Count} ta yozuv muvaffaqiyatli olindi.",  allRecords.Count);
+                _logger.LogInformation("От TTLock успешно получено всего {Count} записей.",  allRecords.Count);
                 return allRecords;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "TTLock API'dan loglarni olishda xato yuz berdi: {Message}", ex.Message);
+                _logger.LogError(ex, "Произошла ошибка при получении логов из TTLock API:{Message}", ex.Message);
                 return allRecords;
             }
         }
@@ -104,13 +100,13 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
                 }
 
                 var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("TTLock API Error Page {PageNo}: Status {Status}. Content: {Content}", pageNo, response.StatusCode, errorContent);
+                _logger.LogError("Ошибка TTLock API на странице {PageNo}: Статус {Status}. Содержание: {Content}", pageNo, response.StatusCode, errorContent);
 
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "HTTP so'rovida kutilmagan xato: {Message}", ex.Message);
+                _logger.LogError(ex, "Непредвиденная ошибка в HTTP-запросе: {Message}", ex.Message);
                 return null;
             }
         }
@@ -124,14 +120,14 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             int totalPages = 1;
             const int pageSize = DefaultPageSize;
 
-            _logger.LogInformation("TTLock IC Card ma'lumotlarini yuklash boshlandi ");
+            _logger.LogInformation("Начата загрузка данных IC-карт TTLock. ");
 
             while (pageNo <= totalPages)
             {
                 long dateTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
           
-                var url = $"{endpoint}?" +
+                var url = $"https://euapi.ttlock.com/v3/" + $"{endpoint}?" +
                           $"clientId={_settings.ClientId}&" +
                           $"accessToken={_settings.AccessToken}&" +
                           $"lockId={_settings.LockId}&" +
@@ -153,32 +149,31 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
                     {
                         allRecords.AddRange(response.List);
                         totalPages = response.Pages;
-                        _logger.LogDebug("IC Card sahifasi {PageNo}/{TotalPages} yuklandi. {Count} ta yozuv qo'shildi.", pageNo, totalPages, response.List.Count);
+                        _logger.LogDebug("Страница IC-карт {PageNo}/{TotalPages} загружена. Добавлено {Count} записей.", pageNo, totalPages, response.List.Count);
                         pageNo++;
                         await Task.Delay(50);
                     }
                     else if (pageNo == 1 && (response?.Total ?? 0) == 0)
                     {
-                        _logger.LogInformation("IC Card uchun ma'lumotlar topilmadi.");
+                        _logger.LogInformation("Данные для IC-карт не найдены.");
                         break;
                     }
                     else
                     {
-                        _logger.LogWarning("IC Card API chaqiruvida kutilmagan holat. Sahifa {PageNo}.", pageNo);
+                        _logger.LogWarning("Hепредвиденная ситуация при вызове TTLock IC Card API. Страница {PageNo}.", pageNo);
                         break;
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "TTLock IC Card API chaqiruvida xato yuz berdi (Page {PageNo})", pageNo);
+                    _logger.LogError(ex, "Произошла ошибка при вызове TTLock IC Card API (Страница {PageNo})", pageNo);
                     break;
                 }
             }
 
-            _logger.LogInformation("TTLock IC Card uchun jami {Count} ta yozuv olindi.", allRecords.Count);
+            _logger.LogInformation("Всего получено {Count} записей для TTLock IC-карт.", allRecords.Count);
             return allRecords;
         }
-
       
         public async Task<ICollection<TTLockFingerprintDto>> GetAllFingerprintsPaginatedAsync(
             string? searchStr = null, int orderBy = 1)
@@ -189,13 +184,14 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             int totalPages = 1;
             const int pageSize = DefaultPageSize;
 
-            _logger.LogInformation("TTLock Fingerprint ma'lumotlarini yuklash boshlandi ");
+            _logger.LogInformation("Старт загрузки данных отпечатков TTLock. ");
 
             while (pageNo <= totalPages)
             {
                 long dateTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-                var url = $"{endpoint}?" +
+                var url = $"https://euapi.ttlock.com/v3/" + 
+                          $"{endpoint}?" +
                           $"clientId={_settings.ClientId}&" +
                           $"accessToken={_settings.AccessToken}&" +
                           $"lockId={_settings.LockId}&" +
@@ -217,29 +213,29 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
                     {
                         allRecords.AddRange(response.List);
                         totalPages = response.Pages;
-                        _logger.LogDebug("Fingerprint sahifasi {PageNo}/{TotalPages} yuklandi. {Count} ta yozuv qo'shildi.", pageNo, totalPages, response.List.Count);
+                        _logger.LogDebug("Страница отпечатков {PageNo}/{TotalPages} загружена. Добавлено {Count} записей.", pageNo, totalPages, response.List.Count);
                         pageNo++;
                         await Task.Delay(50);
                     }
                     else if (pageNo == 1 && (response?.Total ?? 0) == 0)
                     {
-                        _logger.LogInformation("Fingerprint uchun ma'lumotlar topilmadi.");
+                        _logger.LogInformation("Данные для отпечатков пальцев не найдены.");
                         break;
                     }
                     else
                     {
-                        _logger.LogWarning("Fingerprint API chaqiruvida kutilmagan holat. Sahifa {PageNo}.", pageNo);
+                        _logger.LogWarning("Непредвиденная ситуация при вызове Fingerprint API. Страница {PageNo}.", pageNo);
                         break;
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "TTLock Fingerprint API chaqiruvida xato yuz berdi (Page {PageNo})", pageNo);
+                    _logger.LogError(ex, "Произошла ошибка при вызове TTLock Fingerprint API (Страница {PageNo})", pageNo);
                     break;
                 }
             }
 
-            _logger.LogInformation("TTLock Fingerprint uchun jami {Count} ta yozuv olindi.", allRecords.Count);
+            _logger.LogInformation("Всего получено {Count} записей для отпечатков пальцев TTLock.", allRecords.Count);
             return allRecords;
         }
     }

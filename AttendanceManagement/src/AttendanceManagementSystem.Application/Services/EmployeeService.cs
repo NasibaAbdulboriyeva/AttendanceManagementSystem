@@ -108,7 +108,7 @@ namespace AttendanceManagementSystem.Application.Services
                     // 💡 Nullable bo'lmagan maydonlar uchun boshlang'ich qiymat berish
                     employee = new Employee
                     {
-                        CreatedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.Now,
                         IsActive = true,
                         UserName = string.Empty,
                         CardNumber = string.Empty
@@ -125,7 +125,7 @@ namespace AttendanceManagementSystem.Application.Services
                 }
                 else
                 {
-                    employee.ModifiedAt = DateTime.UtcNow;
+                    employee.ModifiedAt = DateTime.Now;
                     await _employeeRepository.UpdateEmployeeAsync(employee);
                 }
                 syncedCount++;
@@ -162,7 +162,7 @@ namespace AttendanceManagementSystem.Application.Services
             var employee = await _employeeRepository.GetEmployeeByIdAsync(id);
             if (employee == null)
             {
-                throw new Exception($"Xodim {id} idsi bo'yicha topilmadi.");
+                throw new Exception($"Сотрудник с идентификатором {id} не найден.");
             }
             return MapToDto(employee);
         }
@@ -170,12 +170,12 @@ namespace AttendanceManagementSystem.Application.Services
         {
             if (scheduleDto == null)
             {
-                throw new ArgumentNullException(nameof(scheduleDto), "Jadval ma'lumotlari bo'sh bo'lishi mumkin emas.");
+                throw new ArgumentNullException(nameof(scheduleDto), "Данные таблицы не могут быть пустыми.");
             }
 
             if (scheduleDto.EmployeeId <= 0)
             {
-                throw new ArgumentException("EmployeeId haqiqiy qiymatga ega bo'lishi kerak.", nameof(scheduleDto.EmployeeId));
+                throw new ArgumentException("EmployeeId должен иметь корректное значение.", nameof(scheduleDto.EmployeeId));
             }
 
             var scheduleEntity = MapToEntity(scheduleDto);
@@ -215,7 +215,7 @@ namespace AttendanceManagementSystem.Application.Services
         {
             if (scheduleDto == null)
             {
-                throw new ArgumentNullException(nameof(scheduleDto), "Jadval ma'lumotlari bo'sh bo'lishi mumkin emas.");
+                throw new ArgumentNullException(nameof(scheduleDto), "Данные таблицы не могут быть пустыми");
             }
 
             // 1. Avval mavjud Schedule Entity'sini bazadan olib kelishimiz kerak
@@ -225,14 +225,14 @@ namespace AttendanceManagementSystem.Application.Services
             {
                 // Agar Schedule mavjud bo'lmasa, xato qaytarish yoki uni yangi qilib yaratish mumkin.
                 // Yangilash (Update) metodida, odatda, mavjud bo'lishi talab qilinadi.
-                throw new KeyNotFoundException($"Xodim {scheduleDto.EmployeeId} uchun jadval topilmadi. Avval yaratilishi kerak.");
+                throw new KeyNotFoundException($"Для сотрудника {scheduleDto.EmployeeId} расписание не найдено. Его нужно создать заранее.");
             }
 
             // 2. DTO dagi ma'lumotlar bilan mavjud Entity'ni yangilash
             // Bu qism odatda maxsus 'MapToEntity' (yoki 'UpdateEntity') metodi orqali amalga oshiriladi.
 
             // Taxmin qilinadigan yangilash:
-            existingSchedule.ModifiedAt = DateTime.UtcNow;
+            existingSchedule.ModifiedAt = DateTime.Now;
             existingSchedule.StartTime = scheduleDto.StartTime;
             existingSchedule.EndTime = scheduleDto.EndTime;
             // ... boshqa maydonlarni ham yangilang
@@ -246,7 +246,7 @@ namespace AttendanceManagementSystem.Application.Services
 
             if (employee == null)
             {
-                throw new KeyNotFoundException($"Xodim '{username}' foydalanuvchi nomi bo'yicha topilmadi.");
+                throw new KeyNotFoundException($"Сотрудник с именем пользователя '{username}' не найден.");
             }
 
 
@@ -275,7 +275,7 @@ namespace AttendanceManagementSystem.Application.Services
                 StartTime = dto.StartTime,
                 EndTime = dto.EndTime,
                 EmployementType = dto.EmployementType,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 ModifiedAt = default
             };
         }
@@ -290,7 +290,7 @@ namespace AttendanceManagementSystem.Application.Services
                 FingerprintId = dto.FingerprintId,
                 FingerprintNumber = dto.FingerprintNumber,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             };
         }
 

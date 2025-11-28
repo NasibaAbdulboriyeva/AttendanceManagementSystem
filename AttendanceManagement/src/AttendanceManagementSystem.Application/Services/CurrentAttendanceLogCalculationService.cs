@@ -1,6 +1,7 @@
 ﻿using AttendanceManagementSystem.Application.Abstractions;
 using AttendanceManagementSystem.Application.DTOs;
 using AttendanceManagementSystem.Domain.Entities;
+using DocumentFormat.OpenXml.InkML;
 namespace AttendanceManagementSystem.Application.Services;
 
 public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalculationService
@@ -24,32 +25,36 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
     {
         throw new NotImplementedException();
     }
-
+    // CurrentAttendanceLogRepository.cs ichida qo'shimcha metod
+ 
     public async Task<ICollection<CurrentAttendanceCalendar>> GetAndSaveMonthlyAttendanceCalendarAsync(long employeeId, DateTime month)
     {
         var startDate = new DateTime(month.Year, month.Month, 1);
         int daysInMonth = startDate.AddMonths(1).AddDays(-1).Day;
 
-        var allExistingLogs = await _attendanceLogRepository.GetLogsByEmployeeAndMonthAsync(employeeId, month);//attendancelogla
+        // 1. AttendanceLog (Asosiy loglar) ni yuklash
+        var allExistingLogs = await _attendanceLogRepository.GetLogsByEmployeeAndMonthAsync(employeeId, month);
 
         var monthlyCalendar = new List<CurrentAttendanceCalendar>();
-        var logsToInsert = new List<CurrentAttendanceLog>();
 
+        // Asosiy loglarni kunlik tartiblash va faqat birinchi kirishni olish mantiqi
         var dailyLogsGrouped = allExistingLogs
-          .GroupBy(log => log.RecordedTime.Date)
-          .ToDictionary(
-            g => g.Key,
-            g => new
-            {
-                FirstEntry = g.OrderBy(log => log.RecordedTime).First()
-            }
-          );
+            .GroupBy(log => log.RecordedTime.Date)
+            .ToDictionary(
+                g => g.Key,
+                g => new
+                {
+                    FirstEntry = g.OrderBy(log => log.RecordedTime).First()
+                }
+            );
 
+        // ... (existingLogDates ishlatilmasa ham mayli, olib tashlanmadi)
         var existingLogDates = new HashSet<DateOnly>(
-          allExistingLogs
-            .Select(log => DateOnly.FromDateTime(log.RecordedTime.Date))
+            allExistingLogs
+                .Select(log => DateOnly.FromDateTime(log.RecordedTime.Date))
         );
 
+        // 2. Oyning har bir kuni uchun kalendar yozuvlarini yaratish (log bor yoki default)
         for (int i = 0; i < daysInMonth; i++)
         {
             var targetDate = startDate.AddDays(i).Date;
@@ -58,9 +63,10 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             if (dailyLogsGrouped.TryGetValue(targetDate, out var dayLog))
             {
                 var calendarDto = MapToCalendarDto(dayLog.FirstEntry);
+                // BU YERDA KECH QOLISH HISOBLASH MANTIQI QO'SHILADI
+                // Masalan: CalculateLateness(calendarDto, targetDate)
                 monthlyCalendar.Add(calendarDto);
             }
-
             else
             {
                 var defaultLogDto = CreateDefaultCalendarDto(employeeId, targetDate);
@@ -68,9 +74,18 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             }
         }
 
-        logsToInsert = monthlyCalendar.Select(dto => MapCalendarDtoToEntity(dto)).ToList();
+        // 3. CurrentAttendanceLog Entity'lariga konvertatsiya qilish
+        var logsToInsert = monthlyCalendar.Select(dto => MapCalendarDtoToEntity(dto)).ToList();
 
+        // --- ✅ MUHIM TUZATISH: UPSERT mantiqi (DELETE + INSERT) ---
+
+        // 1. Avval shu oyga oid barcha mavjud yozuvlarni O'CHIRIB tashlash
+        await _currentAttendanceLogRepository.DeleteMonthlyLogsAsync(employeeId, month);
+
+        // 2. So'ngra yangi hisoblangan barcha yozuvlarni QAYTA SAQLASH (INSERT)
         await _currentAttendanceLogRepository.CreateLogAsync(logsToInsert);
+
+        // --- Tuzatish tugadi ---
 
         return monthlyCalendar;
     }
@@ -81,7 +96,6 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         {
             EmployeeId = dto.EmployeeId,
             EntryDay = dto.EntryDay,
-            DayOfWeek = dto.DayOfWeek,
             FirstEntryTime = dto.FirstEntryTime,
             LastLeavingTime = dto.LastLeavingTime,
             LateArrivalMinutes = dto.LateMinutesTotal,
@@ -89,8 +103,8 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             WorkedHours = dto.WorkedHours,
             IsJustified = dto.IsJustified,
             Description = dto.Description,
-            CalculatedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow,
+            CalculatedAt = DateTime.Now,
+            CreatedAt = DateTime.Now,
             ModifiedAt = null
 
         };
@@ -107,13 +121,12 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             LastLeavingTime = default,
             WorkedHours = 0,
             EntryDay = DateOnly.FromDateTime(log.RecordedTime.Date),
-            DayOfWeek = log.RecordedTime.DayOfWeek,
             LateMinutesTotal = 0,
             RemainingLateMinutes = 0,
             IsJustified = false,
             Description = null,
-            CalculatedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow
+            CalculatedAt = DateTime.Now,
+            CreatedAt = DateTime.Now
         };
 
         return dto;
@@ -127,15 +140,14 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             EmployeeFullName = " ",
             ScheduledStartTime =default,
             EntryDay = DateOnly.FromDateTime(targetDate),
-            DayOfWeek = targetDate.DayOfWeek,
             FirstEntryTime = default,
             LastLeavingTime = default,
             WorkedHours = 0,
             LateMinutesTotal = 0,
             RemainingLateMinutes = 0,
             IsJustified = false,
-            CalculatedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow
+            CalculatedAt = DateTime.Now,
+            CreatedAt = DateTime.Now
         };
     }
 }

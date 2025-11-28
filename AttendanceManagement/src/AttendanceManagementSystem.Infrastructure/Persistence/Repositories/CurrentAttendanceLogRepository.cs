@@ -25,8 +25,19 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
 
             return logs;
         }
+        public async Task DeleteMonthlyLogsAsync(long employeeId, DateTime month)
+        {
+            var startDate = new DateTime(month.Year, month.Month, 1);
+            var nextMonth = startDate.AddMonths(1);
 
-       
+            var logsToDelete = await _context.CurrentAttendanceLogs
+                .Where(l => l.EmployeeId == employeeId && l.EntryDay.Day >= startDate.Day && l.EntryDay.Month < nextMonth.Month)
+            .ToListAsync();
+
+            _context.CurrentAttendanceLogs.RemoveRange(logsToDelete);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<CurrentAttendanceLog> GetLogByIdAsync(long id)
         {
             var log = await _context.CurrentAttendanceLogs

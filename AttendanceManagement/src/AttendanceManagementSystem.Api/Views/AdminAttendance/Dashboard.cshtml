@@ -1,5 +1,5 @@
 ﻿@{
-    // Sahifa nomi
+   
     ViewData["Title"] = "Админ-Панель Учета Посещаемости";
 }
 
@@ -25,7 +25,7 @@
             <div class="card text-center shadow">
                 <div class="card-body">
                     <h5 class="card-title">Синхронизация Сотрудников</h5>
-                    <p class="card-text">Обновить данные сотрудников (карты, отпечатки) из TTLock.</p>
+                    <p class="card-text">Обновить данные сотрудников (карты,отпечатки) из TTLock.</p>
                     <a asp-controller="AdminAttendance" asp-action="EmployeeSync" class="btn btn-warning btn-block">
                         <i class="fas fa-users"></i> Синхронизировать Сотрудников
                     </a>
@@ -36,10 +36,10 @@
         <div class="col-md-4 mb-4">
             <div class="card text-center shadow">
                 <div class="card-body">
-                    <h5 class="card-title">Просмотр Табеля</h5>
-                    <p class="card-text">Перейти к списку сотрудников для просмотра ежемесячного отчета.</p>
+                    <h5 class="card-title">Просмотр активных cотрудников</h5>
+                    <p class="card-text">Перейти к списку сотрудников и просмотр ежемесячного отчета.</p>
                     <a asp-controller="AdminAttendance" asp-action="EmployeeList" class="btn btn-success btn-block">
-                        <i class="fas fa-calendar-alt"></i> Календарь Посещаемости
+                        <i class="fas fa-calendar-alt"></i> Все сотрудники
                     </a>
                 </div>
             </div>

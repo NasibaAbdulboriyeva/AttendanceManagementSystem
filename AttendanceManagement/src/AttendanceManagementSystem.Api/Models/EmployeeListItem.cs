@@ -2,6 +2,6 @@
 {
     public class EmployeeListItem
     {
-        public string FullName { get; set; } = "Mavjud emas";
+        public string FullName { get; set; } 
     }
 }

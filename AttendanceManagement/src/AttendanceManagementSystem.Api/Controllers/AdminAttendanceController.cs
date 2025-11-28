@@ -107,10 +107,9 @@ namespace AttendanceManagementSystem.Api.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> ViewCalendar(long employeeId, int year, int month)
+        public async Task<IActionResult> ViewCalendar(string username, int year, int month)
         {
-            // Agar ma'lumotlar uzatilmasa, Index'ga qaytaramiz (yoki xato xabari)
-            if (employeeId == 0) return RedirectToAction("EmployeeList");
+            if (username == null) return RedirectToAction("EmployeeList");
 
             // O'tilgan yoki default oy/yilni o'rnatish
             var targetMonth = new DateTime(
@@ -118,11 +117,8 @@ namespace AttendanceManagementSystem.Api.Controllers
                 month == 0 ? DateTime.Now.Month : month, 1);
 
             // Xodim ma'lumotlarini olish
-            var employee = await _employeeService.GetEmployeeByIdAsync(employeeId);
-            if (employee == null)
-            {
-                return NotFound("Сотрудник не найден.");
-            }
+            var employeeId = await _employeeService.GetEmployeeIdByUsernameAsync(username);
+            var employee =await _employeeService.GetEmployeeByIdAsync(employeeId);   
 
             // 1. Hisob-kitob Servisini chaqirish (UPSERT amalga oshiriladi)
             var logs = await _calculationService.GetAndSaveMonthlyAttendanceCalendarAsync(employeeId, targetMonth);
@@ -135,7 +131,7 @@ namespace AttendanceManagementSystem.Api.Controllers
                 MonthlyLogs = logs
             };
 
-            return View("Calendar", viewModel); // Calendar.cshtml View'ga yo'naltiramiz
+            return View("Calendar", viewModel);
         }
         [HttpGet]
         public async Task<IActionResult> Inactivate(string username)
@@ -186,7 +182,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         {
             if (!ModelState.IsValid)
             {
-                model.Message = "❌ Ba'zi maydonlar noto'g'ri to'ldirilgan. Iltimos, tekshiring.";
+                model.Message = "❌ Некоторые поля заполнены неправильно. Пожалуйста, проверьте.";
                 return View(model);
             }
 
@@ -218,11 +214,11 @@ namespace AttendanceManagementSystem.Api.Controllers
                     updatedCount++;
                 }
 
-                model.Message = $"✅ Barcha {updatedCount} ta jadval ma'lumotlari muvaffaqiyatli saqlandi/yangilandi!";
+                model.Message = $"✅Все {updatedCount} расписаний успешно сохранены или обновлены!";
             }
             catch (Exception ex)
             {
-                model.Message = $"❌ Saqlashda xatolik yuz berdi: {ex.Message}";
+                model.Message = $"❌ Произошла ошибка при сохранении: {ex.Message}";
                 // Xato bo'lsa ham, formani qaytaramiz (shu sababli 'return View(model)')
             }
 

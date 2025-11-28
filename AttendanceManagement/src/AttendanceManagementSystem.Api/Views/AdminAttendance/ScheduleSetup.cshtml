@@ -2,11 +2,11 @@
 @using AttendanceManagementSystem.Domain.Entities
 
 @{
-    ViewData["Title"] = "Xodimlar Jadvalini Boshqarish";
+    ViewData["Title"] = "Управление графиками сотрудников";
 }
 
-<h2 class="mb-4 text-primary">🗓️ Xodimlar Jadvalini Boshqarish</h2>
-<p class="text-muted">Xodimlar uchun umumiy jadval sozlamalari.</p>
+<h2 class="mb-4 text-primary">🗓️ Управление графиками сотрудников</h2>
+<p class="text-muted">Общие настройки графика для сотрудников .</p>
 
 @if (!string.IsNullOrEmpty(Model.Message))
 {
@@ -73,9 +73,9 @@
     </div>
 
     <div class="mt-4 d-flex justify-content-end">
-        <a asp-action="EmployeeList" class="btn btn-secondary me-2">Ro'yxatga Qaytish</a>
+        <a asp-action="EmployeeList" class="btn btn-secondary me-2">Вернуться к списку</a>
         <button type="submit" class="btn btn-primary btn-lg">
-            <i class="fas fa-save me-1"></i> Barcha Jadvallarni Saqlash
+            <i class="fas fa-save me-1"></i> Сохранить все графики
         </button>
     </div>
 </form>
