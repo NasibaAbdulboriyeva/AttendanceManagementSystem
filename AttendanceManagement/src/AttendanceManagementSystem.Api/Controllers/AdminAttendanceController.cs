@@ -63,14 +63,10 @@ namespace AttendanceManagementSystem.Api.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EmployeeSync(SyncViewModel model)
         {
-            // Lock ID bu sinxronizatsiya uchun majburiy emas (chunki EmployeeService ichida 0 yuboryapsiz)
-            // Lekin agar TTLock API'ga har doim LockId yuborish kerak bo'lsa, bu yerda validatsiya qiling.
-
-            // if (!ModelState.IsValid) { return View(model); } 
 
             try
             {
-                // Service metodini chaqiramiz: Cards va Fingerprint'larni sinxronlash
+
                 var (cardsSynced, fingerprintsSynced) = await _employeeService.SyncEmployeeDataAsync();
                 // Natijani modelga yozamiz
                 model.SyncedCount = cardsSynced + fingerprintsSynced;
@@ -79,22 +75,20 @@ namespace AttendanceManagementSystem.Api.Controllers
             }
             catch (Exception ex)
             {
-                // Xato yuz bersa
+             
                 model.Message = $"❌ Ошибка при синхронизации сотрудников: {ex.Message}";
-                // Logging mexanizmini qo'shish tavsiya etiladi.
+             
             }
-            // Xabar bilan View ni qayta ko'rsatamiz
+           
             return View(model);
         }
 
         [HttpGet]
         public async Task<IActionResult> EmployeeList()
         {
-          
             var allEmployees = await _employeeService.GetAllActiveEmployeesAsync();
 
             var viewModel = new EmployeeListViewModel();
-
 
             viewModel.Employees = allEmployees
                 .Select(e => new EmployeeListItem
@@ -104,26 +98,42 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View(viewModel);
         }
-
-
         [HttpGet]
-        public async Task<IActionResult> ViewCalendar(string username, int year, int month)
+        public async Task<IActionResult> ViewCreateCalendarForAll(int year, int month)
         {
-            if (username == null) return RedirectToAction("EmployeeList");
-
-            // O'tilgan yoki default oy/yilni o'rnatish
             var targetMonth = new DateTime(
                 year == 0 ? DateTime.Now.Year : year,
                 month == 0 ? DateTime.Now.Month : month, 1);
 
-            // Xodim ma'lumotlarini olish
+            await _calculationService.ProcessAllEmployeesMonthlyAttendanceAsync(targetMonth);
+            var emptyViewModel = new AttendanceCalendarViewModel
+            {
+                TargetMonth = targetMonth, 
+               
+            };
+            return View("Calendar", emptyViewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ViewCalendar(string username, int year, int month)
+        {
+            if (username == null)
+            {
+                return RedirectToAction("EmployeeList");
+
+            }
+
+            var targetMonth = new DateTime(
+                year == 0 ? DateTime.Now.Year : year,
+                month == 0 ? DateTime.Now.Month : month, 1);
+
+            
             var employeeId = await _employeeService.GetEmployeeIdByUsernameAsync(username);
-            var employee =await _employeeService.GetEmployeeByIdAsync(employeeId);   
+            var employee =await _employeeService.GetEmployeeByIdAsync(employeeId);
 
-            // 1. Hisob-kitob Servisini chaqirish (UPSERT amalga oshiriladi)
-            var logs = await _calculationService.GetAndSaveMonthlyAttendanceCalendarAsync(employeeId, targetMonth);
+ 
+            var logs=await _calculationService.GetMonthlyAttendanceCalendarsAsync(employeeId, targetMonth);
 
-            // 2. View Modelni to'ldirish
             var viewModel = new AttendanceCalendarViewModel
             {
                 TargetMonth = targetMonth,
@@ -219,7 +229,7 @@ namespace AttendanceManagementSystem.Api.Controllers
             catch (Exception ex)
             {
                 model.Message = $"❌ Произошла ошибка при сохранении: {ex.Message}";
-                // Xato bo'lsa ham, formani qaytaramiz (shu sababli 'return View(model)')
+              
             }
 
             return View(model);

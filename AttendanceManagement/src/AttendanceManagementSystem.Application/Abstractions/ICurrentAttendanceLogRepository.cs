@@ -11,7 +11,7 @@ namespace AttendanceManagementSystem.Application.Abstractions
         Task<CurrentAttendanceLog> UpdateLogAsync(CurrentAttendanceLog log);
         Task DeleteLogAsync(long id);
         Task DeleteMonthlyLogsAsync(long employeeId, DateTime month);
-      
+
 
     }
 }

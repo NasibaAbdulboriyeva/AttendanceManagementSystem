@@ -1,9 +1,39 @@
 ﻿@model AttendanceManagementSystem.Api.Models.EmployeeListViewModel
 
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Список сотрудников</h3>
+
+        @{
+            // Massiv yaratish uchun joriy oy va yilni aniqlash
+            var currentYear = DateTime.Now.Year;
+            var currentMonth = DateTime.Now.Month;
+        }
+
+        @* Yaxshi amaliyot: Qayta ishlanuvchi ma'lumotlar bilan ishlash uchun POST usulidan foydalanish *@
+        <form asp-controller="AdminAttendance"
+              asp-action="ViewCreateCalendarForAll"
+              asp-route-year="@currentYear"
+              asp-route-month="@currentMonth"
+              method="get"
+              style="float: right;">
+
+            <button type="submit"
+                    onclick="return confirm('ВНИМАНИЕ! Вы уверены, что хотите сгенерировать календарь для ВСЕХ активных сотрудников на текущий месяц? Все предыдущие расчеты будут перезаписаны.')"
+                    class="btn btn-success">
+                <i class="fas fa-calendar-plus"></i> Создать Календарь для ВСЕХ (@currentYear-@currentMonth)
+            </button>
+        </form>
+
+    </div>
+</div>
+
 <table class="table">
     <thead>
         <tr>
             <th>ФИО Сотрудника</th>
+            <th style="width: 150px;">Просмотр табеля</th> @* Oldingi ustun nomini o'zgartirdim *@
+            <th style="width: 120px;">Управление</th> @* Yangi ustun *@
         </tr>
     </thead>
     <tbody>
@@ -11,38 +41,41 @@
         {
             <tr>
                 <td>@employee.FullName</td>
+
+                @* 1. Kalendarni ko'rish tugmasi *@
                 <td>
                     @{
                         // tekushiy data parametrlari
-                        var currentYear = DateTime.Now.Year;
-                        var currentMonth = DateTime.Now.Month;
+                        var currentYearForLink = DateTime.Now.Year;
+                        var currentMonthForLink = DateTime.Now.Month;
                     }
 
                     <a asp-controller="AdminAttendance"
                        asp-action="ViewCalendar"
                        asp-route-username="@employee.FullName"
-                       asp-route-year="@currentYear"
-                       asp-route-month="@currentMonth"
+                       asp-route-year="@currentYearForLink"
+                       asp-route-month="@currentMonthForLink"
                        class="btn btn-info btn-sm">
                         <i class="fas fa-calendar-alt"></i> Просмотр табеля
                     </a>
-      
                 </td>
-                <td>
-    @{
-        // Confirm matni
-        var confirmMessage = $"ВНИМАНИЕ! Вы действительно хотите деактивировать сотрудника {employee.FullName}? Он будет удален из списка и не сможет войти в систему.";
-    }
 
-    <a asp-controller="AdminAttendance"
-       asp-action="Inactivate"
-       asp-route-username="@employee.FullName"
-       onclick="return confirm('@confirmMessage')" 
-       class="btn btn-danger btn-sm"
-       title="Деактивация сотрудника">
-        <i class="fas fa-user-slash"></i> Inactive
-    </a>
-</td>
+                @* 2. Deaktivatsiya tugmasi *@
+                <td>
+                    @{
+                        // Confirm matni
+                        var confirmMessage = $"ВНИМАНИЕ! Вы действительно хотите деактивировать сотрудника {employee.FullName}? Он будет удален из списка и не сможет войти в систему.";
+                    }
+
+                    <a asp-controller="AdminAttendance"
+                       asp-action="Inactivate"
+                       asp-route-username="@employee.FullName"
+                       onclick="return confirm('@confirmMessage')"
+                       class="btn btn-danger btn-sm"
+                       title="Деактивация сотрудника">
+                        <i class="fas fa-user-slash"></i> Inactive
+                    </a>
+                </td>
             </tr>
         }
     </tbody>

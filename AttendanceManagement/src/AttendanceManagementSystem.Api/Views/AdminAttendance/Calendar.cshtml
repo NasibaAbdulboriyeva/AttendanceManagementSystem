@@ -1,57 +1,54 @@
 ﻿@model AttendanceManagementSystem.Api.Models.AttendanceCalendarViewModel
 
 @{
-    ViewData["Title"] = "Xodim Qatnashish Kalendari";
+    ViewData["Title"] = "Monthly Calendar";
     var currentMonth = Model.TargetMonth.ToString("MMMM yyyy");
 
-    // TimeOnly? turini formatlash uchun yordamchi funksiya
-    // DTO ichidagi TimeOnly turini formatlash
+    
     string FormatTime(TimeOnly time) => time.ToString("HH:mm");
 }
 
 <div class="card shadow mb-4">
     <div class="card-header py-3">
         <h2 class="m-0 font-weight-bold text-primary">
-            @Model.EmployeeFullName xodimi uchun kalendar
+            Календарь для сотрудника @Model.EmployeeFullName
         </h2>
-        <p class="text-muted">Oy: @currentMonth</p>
+        <p class="text-muted">Месяц: @currentMonth</p>
     </div>
     <div class="card-body">
 
         @* --- Oylik Hisobot (ViewModel orqali) --- *@
         <div class="alert alert-info">
-            <p><strong>Umumiy Kech Qolish (oy davomida):</strong> @Model.MonthlyLogs.Sum(l => l.LateMinutesTotal) daqiqa</p>
+            <p><strong>Общее опоздание (за месяц):</strong> @Model.MonthlyLogs.Sum(l => l.LateMinutesTotal) минут</p>
             @{
                 // Oylik limitni hisoblash uchun DTO'dagi Total va Remaining maydonlarini ishlatamiz
                 var totalLate = Model.MonthlyLogs.Sum(l => l.LateMinutesTotal);
-                var remainingLate = 80 - totalLate; // 80 minut limitni taxmin qildik
+                var remainingLate = 80 - totalLate; 
             }
             <p>
-                <strong>Qolgan Kech Qolish Limiti (80 min):</strong>
+                <strong>Остаток лимита (80 min):</strong>
                 @if (remainingLate < 0)
                 {
-                    <span class="text-danger">Limitdan oshgan! (@(Math.Abs(remainingLate)) daqiqa)</span>
+                    <span class="text-danger">Лимит истек !(@(Math.Abs(remainingLate)) минут)</span>
                 }
                 else
                 {
-                    <span class="text-success">@remainingLate daqiqa qoldi</span>
+                    <span class="text-success">
+                        <strong>осталось @remainingLate минут</strong>
+                    </span>
                 }
             </p>
         </div>
-        @* ---------------------------------------- *@
 
         <table class="table table-bordered table-responsive table-sm">
             <thead>
                 <tr>
-                    <th style="width: 100px;">Sana</th>
-                    <th style="width: 120px;">Rasmiy Kirish</th>
-                    <th style="width: 120px;">Amaldagi Kirish</th>
-                    <th style="width: 120px;">Ketish Vaqti</th>
-                    <th style="width: 100px;">Kech Qolish (Min)</th>
-                    <th style="width: 120px;">Ishlangan (Soat)</th> @* DTO da WorkedHours bor *@
-                    <th style="width: 100px;">Status</th>
-                    <th style="width: 100px;">Sababli</th>
-                    <th style="width: 150px;">Izoh</th>
+                    <th style="width: 100px;">Дата</th>
+                    <th style="width: 120px;">Время прихода</th>
+                    <th style="width: 120px;">Приходил(а)</th>
+                    <th style="width: 100px;">Опоздание (мин/в день)</th>
+                    <th style="width: 100px;">Обосновано</th>
+                    <th style="width: 150px;">Причина/комментария</th>
                 </tr>
             </thead>
             <tbody>
@@ -69,7 +66,6 @@
 
                         @* TimeOnly lar uchun: *@
                         <td>@FormatTime(dayLog.FirstEntryTime)</td>
-                        <td>@FormatTime(dayLog.LastLeavingTime)</td>
 
                         @* Kech qolish minutlari *@
                         <td>
@@ -83,8 +79,7 @@
                             }
                         </td>
 
-                        @* Ishlangan soatlar *@
-                        <td>@dayLog.WorkedHours</td>
+                     
 
                         @* Status *
                     <td>
@@ -118,14 +113,22 @@
                             }
                         </td>
 
-                        <td>@dayLog.Description</td>
+                        <td>
+                            <input type="text"
+                                                     data-employee-id="@dayLog.EmployeeId"
+                                                     data-entry-day="@dayLog.EntryDay.ToString("yyyy-MM-dd")"
+                                                     value="@dayLog.Description"
+                                                     class="form-control form-control-sm comment-input"
+                                                     placeholder="Укажите причину ..."
+                                                     style="width: 240px;" />
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
 
         <a asp-action="EmployeeList" asp-controller="AdminAttendance" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Ro'yxatga Qaytish
+            <i class="fas fa-arrow-left"></i> Вернуться к листу
         </a>
     </div>
 </div>
