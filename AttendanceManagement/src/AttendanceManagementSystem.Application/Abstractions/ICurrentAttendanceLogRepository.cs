@@ -7,11 +7,12 @@ namespace AttendanceManagementSystem.Application.Abstractions
         Task<CurrentAttendanceLog> GetLogByIdAsync(long id);
         Task<ICollection<CurrentAttendanceLog>> GetAllLogsAsync();
         Task<ICollection<CurrentAttendanceLog>> GetLogsByEmployeeIdAsync(long employeeId);
+        Task<CurrentAttendanceLog>GetLogByEmployeeIdAndEntryDayAsync(long employeeId,DateOnly date);
         Task<ICollection<CurrentAttendanceLog>>CreateLogAsync(ICollection<CurrentAttendanceLog> logs);
         Task<CurrentAttendanceLog> UpdateLogAsync(CurrentAttendanceLog log);
         Task DeleteLogAsync(long id);
         Task DeleteMonthlyLogsAsync(long employeeId, DateTime month);
-
+        Task<int> SaveChangesAsync();
 
     }
 }

@@ -7,7 +7,7 @@
         @{
             // Massiv yaratish uchun joriy oy va yilni aniqlash
             var currentYear = DateTime.Now.Year;
-            var currentMonth = DateTime.Now.Month;
+            var currentMonth = 11;
         }
 
         @* Yaxshi amaliyot: Qayta ishlanuvchi ma'lumotlar bilan ishlash uchun POST usulidan foydalanish *@
@@ -47,7 +47,7 @@
                     @{
                         // tekushiy data parametrlari
                         var currentYearForLink = DateTime.Now.Year;
-                        var currentMonthForLink = DateTime.Now.Month;
+                        var currentMonthForLink = 11;
                     }
 
                     <a asp-controller="AdminAttendance"

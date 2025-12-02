@@ -9,6 +9,8 @@ namespace AttendanceManagementSystem.Application.Services
         Task<ICollection<CurrentAttendanceCalendar>> GetLateArrivalsForPeriodAsync(string employeeCode, DateTime month);
         Task ProcessAllEmployeesMonthlyAttendanceAsync(DateTime month);
         int CalculateLateMinutes(CurrentAttendanceCalendar calendarDto, DateTime targetDate);
+        Task UpdateEntryTimeManuallyAsync(UpdateEntryTimeDto dto);
+        Task UpdateJustificationStatusAsync(UpdateJustificationDto dto);
 
     }
 }

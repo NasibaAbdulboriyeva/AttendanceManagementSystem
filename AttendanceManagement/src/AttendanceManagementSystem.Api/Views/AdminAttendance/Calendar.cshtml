@@ -4,7 +4,7 @@
     ViewData["Title"] = "Monthly Calendar";
     var currentMonth = Model.TargetMonth.ToString("MMMM yyyy");
 
-    
+    // Helper: TimeOnly ni stringga formatlash
     string FormatTime(TimeOnly time) => time.ToString("HH:mm");
 }
 
@@ -17,125 +17,364 @@
     </div>
     <div class="card-body">
 
-        @* --- Oylik Hisobot (ViewModel orqali) --- *@
+        @* --- Oylik Hisobot (Faqat SABABSIZ Kechikishlar Hisoblanadi) --- *@
+        @{
+            // Faqat SABABSIZ (IsJustified == false) kechikishlarni hisoblaymiz.
+            // Bu ma'lumot sahifa yuklanganda to'g'ri bo'lishi kerak.
+            var unjustifiedLate = Model.MonthlyLogs
+            .Where(l => l.LateMinutesTotal > 0 && l.IsJustified == false)
+            .Sum(l => l.LateMinutesTotal);
+
+            var totalUnjustifiedLate = unjustifiedLate;
+            var remainingLate = 80 - totalUnjustifiedLate;
+        }
         <div class="alert alert-info">
-            <p><strong>Общее опоздание (за месяц):</strong> @Model.MonthlyLogs.Sum(l => l.LateMinutesTotal) минут</p>
-            @{
-                // Oylik limitni hisoblash uchun DTO'dagi Total va Remaining maydonlarini ishlatamiz
-                var totalLate = Model.MonthlyLogs.Sum(l => l.LateMinutesTotal);
-                var remainingLate = 80 - totalLate; 
-            }
+            <p>
+                <strong>Общее опоздание (за месяц, без оправдания):</strong>
+                <span id="monthly-total-late">@totalUnjustifiedLate</span> минут
+            </p>
             <p>
                 <strong>Остаток лимита (80 min):</strong>
                 @if (remainingLate < 0)
                 {
-                    <span class="text-danger">Лимит истек !(@(Math.Abs(remainingLate)) минут)</span>
+                    <span class="text-danger font-weight-bold" id="monthly-remaining-late-status">
+                        Лимит истек! (@(Math.Abs(remainingLate)) минут перерасхода)
+                    </span>
                 }
                 else
                 {
-                    <span class="text-success">
-                        <strong>осталось @remainingLate минут</strong>
+                    <span class="text-success font-weight-bold" id="monthly-remaining-late-status">
+                        осталось @remainingLate минут
                     </span>
                 }
             </p>
         </div>
 
-        <table class="table table-bordered table-responsive table-sm">
-            <thead>
-                <tr>
-                    <th style="width: 100px;">Дата</th>
-                    <th style="width: 120px;">Время прихода</th>
-                    <th style="width: 120px;">Приходил(а)</th>
-                    <th style="width: 100px;">Опоздание (мин/в день)</th>
-                    <th style="width: 100px;">Обосновано</th>
-                    <th style="width: 150px;">Причина/комментария</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var dayLog in Model.MonthlyLogs)
-                {
-                    // Kunlik kech qolish minutlari uchun DTO dagi LateMinutesTotal ni ishlatamiz
-                    var isLate = dayLog.LateMinutesTotal > 0;
-                    var rowClass = isLate ? "table-danger" : "";
-
-                    <tr class="@rowClass" id="log-@dayLog.EntryDay.ToString("yyyyMMdd")">
-                        <td>@dayLog.EntryDay.ToString("dd.MM")</td>
-
-                        @* ScheduledStartTime TimeSpan turida berilgan, uni to'g'irlash kerak *@
-                        <td>@(dayLog.ScheduledStartTime != TimeSpan.Zero ? dayLog.ScheduledStartTime.ToString(@"hh\:mm") : "—")</td>
-
-                        @* TimeOnly lar uchun: *@
-                        <td>@FormatTime(dayLog.FirstEntryTime)</td>
-
-                        @* Kech qolish minutlari *@
-                        <td>
-                            @if (isLate)
-                            {
-                                <span class="badge badge-danger">@dayLog.LateMinutesTotal</span>
-                            }
-                            else
-                            {
-                                <span>—</span>
-                            }
-                        </td>
-
-                     
-
-                        @* Status *
-                    <td>
-                    @if (isLate)
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Дата</th>
+                        <th style="width: 120px;">План. время</th> @* Плановое время прихода *@
+                        <th style="width: 120px;">Факт. приход (Ручной ввод)</th> @* Факт. время прихода *@
+                        <th style="width: 100px;">Опоздание (мин)</th>
+                        <th style="width: 100px;">Обосновано</th> @* Checkbox turadigan joy *@
+                        <th>Причина/комментарий</th> @* Input turadigan joy *@
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var dayLog in Model.MonthlyLogs)
                     {
-                    <span class="badge badge-danger">Kech qolgan</span>
-                    }
-                    else if (dayLog.FirstEntryTime != default) // Agar TimeOnly kiritilgan bo'lsa
-                    {
-                    <span class="badge badge-success">Kelgan</span>
-                    }
-                    else
-                    {
-                    <span class="badge badge-secondary">Yo'q</span>
-                    }
-                    </td>
+                        // Har bir qator o'zining kechikish minutlarini va sababli statusini saqlashi kerak
+                        var isLate = dayLog.LateMinutesTotal > 0;
+                        var rowClass = isLate && !dayLog.IsJustified ? "table-danger" : ""; // Faqat sababsiz kechikish qizil rangda
 
-                    @* Sababli (Interaktiv Checkbox) *@
-                        <td class="text-center">
-                            @if (isLate)
-                            {
-                                <input type="checkbox"
+                        <tr class="@rowClass"
+                            id="log-@dayLog.EntryDay.ToString("yyyyMMdd")"
+                            data-late-minutes="@dayLog.LateMinutesTotal"
+                            data-is-justified="@dayLog.IsJustified.ToString().ToLower()">
+
+                            <td>@dayLog.EntryDay.ToString("dd.MM")</td>
+
+                            @* 1. Planlashtirilgan kirish vaqti (Tahrirlanmaydi) *@
+                            <td>@(dayLog.ScheduledStartTime != TimeSpan.Zero ? dayLog.ScheduledStartTime.ToString(@"hh\:mm") : "—")</td>
+
+                            @* 2. QO'LDA KIRITISH INPUTI *@
+                            <td>
+                                @{
+                                    var entryTimeString = dayLog.FirstEntryTime != default ? FormatTime(dayLog.FirstEntryTime) : "";
+                                }
+                                <input type="time"
                                        data-employee-id="@dayLog.EmployeeId"
                                        data-entry-day="@dayLog.EntryDay.ToString("yyyy-MM-dd")"
-                                       checked="@dayLog.IsJustified"
-                                       class="justify-checkbox" />
-                            }
-                            else
-                            {
-                                <span>—</span>
-                            }
-                        </td>
+                                       value="@entryTimeString"
+                                       class="form-control form-control-sm manual-entry-time" />
+                            </td>
 
-                        <td>
-                            <input type="text"
-                                                     data-employee-id="@dayLog.EmployeeId"
-                                                     data-entry-day="@dayLog.EntryDay.ToString("yyyy-MM-dd")"
-                                                     value="@dayLog.Description"
-                                                     class="form-control form-control-sm comment-input"
-                                                     placeholder="Укажите причину ..."
-                                                     style="width: 240px;" />
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                            @* 3. Kech qolish minutlari - ENDI QIZIL BADGE ISHLATILADI *@
+                            <td class="late-minutes-cell text-center">
+                                @if (isLate)
+                                {
+                                    <span class="badge badge-info text-dark current-late-minutes">@dayLog.LateMinutesTotal</span>
+                                   
+                                }
+                                else
+                                {
+                                    <span class="current-late-minutes">0</span>
+                                }
+                            </td>
 
-        <a asp-action="EmployeeList" asp-controller="AdminAttendance" class="btn btn-secondary">
+
+                            @* 4. SABABLI CHECKBOX va VIZUAL STATUS *@
+                            <td class="text-center justify-status-cell">
+                                @if (dayLog.FirstEntryTime != default)
+                                {
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <input type="checkbox"
+                                               data-employee-id="@dayLog.EmployeeId"
+                                               data-entry-day="@dayLog.EntryDay.ToString("yyyy-MM-dd")"
+                                               checked="@dayLog.IsJustified"
+                                               class="justify-checkbox mr-2"
+                                               style="transform: scale(1.5);" />
+
+                                        <span class="justify-visual-icon @(dayLog.IsJustified ? "text-success" : "text-secondary") font-weight-bold">
+                                            @(dayLog.IsJustified ? "✅" : "❌")
+                                        </span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
+                            </td>
+
+                            @* 5. KOMMENTARIYA INPUTI *@
+                            <td>
+                                <input type="text"
+                                       data-employee-id="@dayLog.EmployeeId"
+                                       data-entry-day="@dayLog.EntryDay.ToString("yyyy-MM-dd")"
+                                       value="@dayLog.Description"
+                                       class="form-control form-control-sm comment-input"
+                                       placeholder="Укажите причину ..." />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <a asp-action="EmployeeList" asp-controller="AdminAttendance" class="btn btn-secondary mt-3">
             <i class="fas fa-arrow-left"></i> Вернуться к листу
         </a>
     </div>
 </div>
 
 @section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        // ... (Oldingi javobdagi AJAX mantiqni shu yerga joylashtiring) ...
-        // Checkbox holati o'zgarishini kuzatish uchun mantiq shu yerda bo'lishi kerak.
+        $(document).ready(function () {
+
+            const MONTHLY_LIMIT = 80;
+
+            // Xatolarni ko'rsatish uchun yordamchi funksiya
+            function showFeedback(element, isSuccess) {
+                element.removeClass('is-valid is-invalid');
+                if (isSuccess) {
+                    element.addClass('is-valid');
+                } else {
+                    element.addClass('is-invalid');
+                }
+                setTimeout(function () {
+                    element.removeClass('is-valid is-invalid');
+                }, 1500);
+            }
+
+            // =========================================================
+            // A. Oylik hisobotni yangilash mantig'i
+            // =========================================================
+            function updateMonthlySummary() {
+                let totalUnjustifiedLate = 0;
+
+                // Har bir qatordan ma'lumotlarni o'qib chiqish
+                $('tbody tr').each(function () {
+                    const row = $(this);
+                    const lateMinutes = parseInt(row.data('late-minutes') || 0);
+                    const isJustified = row.data('is-justified') === 'true';
+
+                    // Faqat kechikish bo'lsa va sababsiz bo'lsa, qo'shamiz
+                    if (lateMinutes > 0 && !isJustified) {
+                        totalUnjustifiedLate += lateMinutes;
+                    }
+                });
+
+                const remainingLate = MONTHLY_LIMIT - totalUnjustifiedLate;
+                const statusSpan = $('#monthly-remaining-late-status');
+                const totalLateSpan = $('#monthly-total-late');
+
+                // Yangi totalni UI ga yozish
+                totalLateSpan.text(totalUnjustifiedLate);
+
+                // Limit statusini yangilash
+                statusSpan.removeClass('text-success text-danger');
+                if (remainingLate < 0) {
+                    statusSpan.addClass('text-danger');
+                    statusSpan.html(`Лимит истек! (${Math.abs(remainingLate)} минут перерасхода)`);
+                } else {
+                    statusSpan.addClass('text-success');
+                    statusSpan.html(`осталось ${remainingLate} минут`);
+                }
+            }
+
+
+            // =========================================================
+            // B. SABABINI BELGILASH (JUSTIFICATION CHECKBOX) MANTIQI
+            // =========================================================
+            $('.justify-checkbox').on('change', function () {
+                var checkbox = $(this);
+                var row = checkbox.closest('tr');
+                var isChecked = checkbox.is(':checked');
+                var employeeId = checkbox.data('employee-id');
+                var entryDay = checkbox.data('entry-day');
+
+                // Vizual ikonkani yangilash
+                const visualIcon = row.find('.justify-visual-icon');
+                visualIcon.removeClass('text-success text-secondary');
+                if (isChecked) {
+                    visualIcon.addClass('text-success').text('✅');
+                } else {
+                    visualIcon.addClass('text-secondary').text('❌');
+                }
+
+                $.ajax({
+                    url: '@Url.Action("UpdateJustificationStatus", "AdminAttendance")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        EmployeeId: employeeId,
+                        EntryDay: entryDay,
+                        IsJustified: isChecked
+                    }),
+                    success: function (response) {
+                        showFeedback(checkbox, true);
+
+                        // Qatorning justified ma'lumotini yangilash
+                        row.data('is-justified', isChecked.toString().toLowerCase());
+
+                        // Kechikish bo'lsa, qator rangini yangilash
+                        const lateMinutes = parseInt(row.data('late-minutes') || 0);
+                        if (lateMinutes > 0) {
+                            if (isChecked) {
+                                row.removeClass('table-danger');
+                            } else {
+                                row.addClass('table-danger');
+                            }
+                        }
+
+                        // Oylik hisobotni yangilash
+                        updateMonthlySummary();
+                    },
+                    error: function (xhr, status, error) {
+                        showFeedback(checkbox, false);
+                        alert("Xato: Sabab statusi saqlanmadi.");
+                        // Agar xato bo'lsa, checkbox va vizual ikonkani avvalgi holatiga qaytarish
+                        checkbox.prop('checked', !isChecked);
+                        row.data('is-justified', (!isChecked).toString().toLowerCase());
+                        visualIcon.removeClass('text-success text-secondary');
+                        visualIcon.addClass(!isChecked ? 'text-success' : 'text-secondary').text(!isChecked ? '✅' : '❌');
+                        updateMonthlySummary(); // Agar avvalgi holatiga qaytarilgan bo'lsa, umumiy totalni ham qayta hisoblash
+                    }
+                });
+            });
+
+            // =========================================================
+            // C. KOMMENTARIYA KIRTISH (INPUT BLUR) MANTIQI
+            // =========================================================
+            // Bu yerda Controllerda 'UpdateDescription' nomli Action'ingiz bor deb faraz qilamiz
+            $('.comment-input').on('blur', function () {
+                var input = $(this);
+                var employeeId = input.data('employee-id');
+                var entryDay = input.data('entry-day');
+                var description = input.val();
+
+                if (description === input.data('original-value')) {
+                    // Agar o'zgarish bo'lmasa, saqlashga urinish shart emas
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("UpdateDescription", "AdminAttendance")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        EmployeeId: employeeId,
+                        EntryDay: entryDay,
+                        Description: description
+                    }),
+                    beforeSend: function () {
+                        // Original qiymatni saqlash
+                        input.data('original-value', input.val());
+                    },
+                    success: function (response) {
+                        showFeedback(input, true);
+                    },
+                    error: function (xhr, status, error) {
+                        showFeedback(input, false);
+                        console.error("Комментарийни сақлашда хато:", error);
+                    }
+                });
+            });
+
+            // =========================================================
+            // D. QO'LDA VAQT KIRITISH (MANUAL TIME INPUT) MANTIQI
+            // =========================================================
+            $('.manual-entry-time').on('blur', function () {
+                var input = $(this);
+                var manualEntryTime = input.val(); // Format: HH:mm
+                var employeeId = input.data('employee-id');
+                var entryDay = input.data('entry-day');
+                var row = input.closest('tr');
+
+                // Agar bo'sh qoldirilsa, serverga "null" yoki "default" qiymatini yuborish kerak.
+                const manualTimeToSend = manualEntryTime === "" ? "00:00:00" : manualEntryTime + ":00";
+
+                $.ajax({
+                    url: '@Url.Action("UpdateEntryTime", "AdminAttendance")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        EmployeeId: employeeId,
+                        EntryDay: entryDay,
+                        ManualEntryTime: manualTimeToSend
+                    }),
+                    success: function (response) {
+                        showFeedback(input, true);
+
+                        // response.lateMinutes - yangi hisoblangan kechikish minutlari bo'lishi kerak
+
+                        if (response.isSuccess && response.lateMinutes !== undefined) {
+                            const newLateMinutes = response.lateMinutes;
+
+                            // 1. Kechikish minutlarini yangilash
+                            const lateMinutesSpan = row.find('.late-minutes-cell .current-late-minutes');
+
+                            lateMinutesSpan.removeClass('badge badge-warning').text('—');
+                            if (newLateMinutes > 0) {
+                                lateMinutesSpan.addClass('badge badge-warning').text(newLateMinutes);
+                            }
+
+                            // 2. Qatorning kechikish ma'lumotini yangilash
+                            row.data('late-minutes', newLateMinutes);
+
+                            // 3. Qator rangini yangilash (agar kechikish bo'lsa va sababsiz bo'lsa)
+                            const isJustified = row.data('is-justified') === 'true';
+
+                            if (newLateMinutes > 0 && !isJustified) {
+                                row.addClass('table-danger');
+                            } else {
+                                row.removeClass('table-danger');
+                            }
+
+                            // 4. Oylik hisobotni yangilash
+                            updateMonthlySummary();
+                        } else {
+                            // Agar serverdan to'liq ma'lumot kelmasa
+                            console.warn("Serverdan to'liq yangilangan ma'lumotlar kelmadi. Sahifani yangilash tavsiya etiladi.");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        showFeedback(input, false);
+                        alert("Xato: Vaqtni qo'lda kiritishda xatolik yuz berdi.");
+                    }
+                });
+            });
+
+            // Sahifa yuklanganda barcha comment inputlarining original qiymatini saqlab qo'yish
+            $('.comment-input').each(function () {
+                $(this).data('original-value', $(this).val());
+            });
+
+            // Sahifa yuklanganda umumiy hisobni dastlabki hisoblash
+            updateMonthlySummary();
+        });
     </script>
 }

@@ -27,7 +27,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         }
         public async Task DeleteMonthlyLogsAsync(long employeeId, DateTime month)
         {
-            var startDate = new DateTime(month.Year, month.Month, 1);
+            var startDate = new DateTime(month.Year, 11, 1);
 
             var logsToDelete = await _context.CurrentAttendanceLogs
                 .Where(l => l.EmployeeId == employeeId &&
@@ -77,6 +77,21 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
                 _context.CurrentAttendanceLogs.Remove(log);
                 await _context.SaveChangesAsync();
             }
+        }
+        public async Task<CurrentAttendanceLog> GetLogByEmployeeIdAndEntryDayAsync(long employeeId, DateOnly entryDay)
+        {
+            var targetDate = entryDay;
+
+            var log = await _context.CurrentAttendanceLogs
+                .FirstOrDefaultAsync(l =>
+                    l.EmployeeId == employeeId &&
+                    l.EntryDay == targetDate); 
+
+            return log;
+        }
+        public Task<int> SaveChangesAsync()
+        {
+            return _context.SaveChangesAsync();
         }
     }
 }

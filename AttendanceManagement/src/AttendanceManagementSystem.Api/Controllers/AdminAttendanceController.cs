@@ -103,7 +103,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         {
             var targetMonth = new DateTime(
                 year == 0 ? DateTime.Now.Year : year,
-                month == 0 ? DateTime.Now.Month : month, 1);
+                month == 0 ? 11 : month, 1);
 
             await _calculationService.ProcessAllEmployeesMonthlyAttendanceAsync(targetMonth);
             var emptyViewModel = new AttendanceCalendarViewModel
@@ -125,7 +125,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             var targetMonth = new DateTime(
                 year == 0 ? DateTime.Now.Year : year,
-                month == 0 ? DateTime.Now.Month : month, 1);
+                month == 0 ? 11: month, 1);
 
             
             var employeeId = await _employeeService.GetEmployeeIdByUsernameAsync(username);
@@ -185,6 +185,27 @@ namespace AttendanceManagementSystem.Api.Controllers
             }
 
             return View(viewModel);
+        }
+        // AdminAttendanceController.cs
+
+        [HttpPost]
+        // 1. Vaqtni qo'lda kiritish (Input maydoni orqali)
+        public async Task<IActionResult> UpdateEntryTime([FromBody] UpdateEntryTimeDto dto)
+        {
+            // Vaqtni kiritish va kechikishni qayta hisoblash
+            await _calculationService.UpdateEntryTimeManuallyAsync(dto);
+
+            return Ok(new { success = true });
+        }
+
+        [HttpPost]
+        // 2. Sababini belgilash (Checkbox orqali)
+        public async Task<IActionResult> UpdateJustificationStatus([FromBody] UpdateJustificationDto dto)
+        {
+            // Sababli statusni yangilash
+            await _calculationService.UpdateJustificationStatusAsync(dto);
+
+            return Ok(new { success = true });
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
