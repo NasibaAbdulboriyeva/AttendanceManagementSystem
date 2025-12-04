@@ -17,10 +17,7 @@
     </div>
     <div class="card-body">
 
-        @* --- Oylik Hisobot (Faqat SABABSIZ Kechikishlar Hisoblanadi) --- *@
         @{
-            // Faqat SABABSIZ (IsJustified == false) kechikishlarni hisoblaymiz.
-            // Bu ma'lumot sahifa yuklanganda to'g'ri bo'lishi kerak.
             var unjustifiedLate = Model.MonthlyLogs
             .Where(l => l.LateMinutesTotal > 0 && l.IsJustified == false)
             .Sum(l => l.LateMinutesTotal);
@@ -128,7 +125,6 @@
                                 }
                             </td>
 
-                            @* 5. KOMMENTARIYA INPUTI *@
                             <td>
                                 <input type="text"
                                        data-employee-id="@dayLog.EmployeeId"
