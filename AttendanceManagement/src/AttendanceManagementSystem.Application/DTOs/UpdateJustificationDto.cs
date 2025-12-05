@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 
 namespace AttendanceManagementSystem.Application.DTOs
 {
@@ -12,5 +8,6 @@ namespace AttendanceManagementSystem.Application.DTOs
         public long EmployeeId { get; set; }
         public DateOnly EntryDay { get; set; }
         public bool IsJustified { get; set; }
+        public bool IsWorkingDay { get; set; }
     }
 }

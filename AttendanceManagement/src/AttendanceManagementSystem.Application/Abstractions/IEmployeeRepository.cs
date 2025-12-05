@@ -13,6 +13,7 @@ namespace AttendanceManagementSystem.Application.Abstractions
         Task<ICollection<Employee>> GetAllEmployeesAsync();
         Task<ICollection<Employee>> GetAllActiveEmployeesAsync();
         Task<EmployeeSchedule?> GetScheduleByEmployeeIdAsync(long employeeId);
+        Task<ICollection<EmployeeSchedule>> GetAllSchedulesAsync();
         Task <long>AddEmployeeScheduleAsync(EmployeeSchedule schedule);
         Task UpdateScheduleAsync(EmployeeSchedule schedule);
     }

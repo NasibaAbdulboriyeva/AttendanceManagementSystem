@@ -22,6 +22,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         {
             return View();
         }
+
         [HttpGet]
         public IActionResult Index()
         {
@@ -46,7 +47,7 @@ namespace AttendanceManagementSystem.Api.Controllers
             catch (Exception ex)
             {
                 model.Message = $"❌ Ошибка при синхронизации логов:{ex.Message}";
-                // Logging mexanizmini qo'shing (masalan, ILogger orqali)
+                
             }
 
             return View(model);
@@ -55,7 +56,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         [HttpGet]
         public IActionResult EmployeeSync()
         {
-            // Xodim sinxronizatsiyasi uchun ham xuddi shu model ishlatilishi mumkin, yoki yangi model yaratishingiz mumkin.
+           
             return View(new SyncViewModel());
         }
 
@@ -98,6 +99,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View(viewModel);
         }
+
         [HttpGet]
         public async Task<IActionResult> ViewCreateCalendarForAll(int year, int month)
         {
@@ -114,6 +116,8 @@ namespace AttendanceManagementSystem.Api.Controllers
             return View("Calendar", emptyViewModel);
         }
 
+      
+
         [HttpGet]
         public async Task<IActionResult> ViewCalendar(string username, int year, int month)
         {
@@ -126,7 +130,6 @@ namespace AttendanceManagementSystem.Api.Controllers
             var targetMonth = new DateTime(
                 year == 0 ? DateTime.Now.Year : year,
                 month == 0 ? 11: month, 1);
-
             
             var employeeId = await _employeeService.GetEmployeeIdByUsernameAsync(username);
             var employee =await _employeeService.GetEmployeeByIdAsync(employeeId);
@@ -143,6 +146,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View("Calendar", viewModel);
         }
+
         [HttpGet]
         public async Task<IActionResult> Inactivate(string username)
         {
@@ -153,18 +157,18 @@ namespace AttendanceManagementSystem.Api.Controllers
             return RedirectToAction("EmployeeList");
 
         }
+
         [HttpGet]
         public async Task<IActionResult> ScheduleSetup()
         {
-            // 1. Barcha xodimlarni olish
+            var allEmployeeSchedules = await _employeeService.GetAllSchedulesAsync();
             var allEmployeesDto = await _employeeService.GetAllActiveEmployeesAsync();
 
             var viewModel = new EmployeeScheduleViewModel();
 
-            // 2. Har bir xodim uchun jadvalni yuklash
             foreach (var employeeDto in allEmployeesDto.OrderBy(e => e.UserName))
             {
-                // 2.1. Mavjud jadvalni olish
+               
                 var scheduleDto = await _employeeService.GetEmployeeScheduleByEmployeeIdAsync(employeeDto.EmployeeId);
 
                 var item = new ScheduleListItem
@@ -174,7 +178,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
                 if (scheduleDto != null)
                 {
-                    // Mavjud jadvalni DTO dan View Modelga o'tkazish (UPDATE uchun)
+                    
                     item.StartTime = scheduleDto.StartTime;
                     item.EndTime = scheduleDto.EndTime;
                     item.LimitInMinutes = scheduleDto.LimitInMinutes;
@@ -186,27 +190,27 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View(viewModel);
         }
-        // AdminAttendanceController.cs
-
+       
         [HttpPost]
-        // 1. Vaqtni qo'lda kiritish (Input maydoni orqali)
+      
         public async Task<IActionResult> UpdateEntryTime([FromBody] UpdateEntryTimeDto dto)
         {
-            // Vaqtni kiritish va kechikishni qayta hisoblash
+           
             await _calculationService.UpdateEntryTimeManuallyAsync(dto);
 
             return Ok(new { success = true });
         }
 
         [HttpPost]
-        // 2. Sababini belgilash (Checkbox orqali)
+        
         public async Task<IActionResult> UpdateJustificationStatus([FromBody] UpdateJustificationDto dto)
         {
-            // Sababli statusni yangilash
+            
             await _calculationService.UpdateJustificationStatusAsync(dto);
 
             return Ok(new { success = true });
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScheduleSetup(EmployeeScheduleViewModel model)

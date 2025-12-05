@@ -23,7 +23,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
             builder.Property(c => c.Description)
                     .HasMaxLength(500)
                     .IsRequired(false);
-           
+
 
             builder.Property(c => c.CalculatedAt)
                     .IsRequired()
@@ -42,7 +42,13 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
             builder.Property(c => c.EntryDay)
                     .HasColumnType("date")
                     .IsRequired();
+            builder.Property(c => c.IsWorkingDay)
+                   .IsRequired()
+                   .HasDefaultValue(true); // backend default logic ishlaydi, DB default true bo‘lsin
 
+            builder.Property(c => c.IsJustified)
+                    .IsRequired()
+                    .HasDefaultValue(false);
             builder.Property(e => e.CreatedAt)
                     .IsRequired()
                     .HasColumnType("datetime2")

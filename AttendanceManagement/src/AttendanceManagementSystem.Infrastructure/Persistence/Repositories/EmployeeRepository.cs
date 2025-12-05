@@ -101,6 +101,12 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
 
         }
 
+        public async Task<ICollection<EmployeeSchedule>> GetAllSchedulesAsync()
+        {
+            return await _context.EmployeeSchedules
+                                  .OrderBy(e => e.Employee.UserName)
+                                  .ToListAsync();
+        }
     }
 }
 

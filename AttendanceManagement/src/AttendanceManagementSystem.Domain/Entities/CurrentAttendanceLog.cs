@@ -9,6 +9,7 @@
         public int RemainingLateMinutes { get; set; }// 80 minut ayrilgani
         public string? Description { get; set; }
         public bool IsJustified { get; set; } // ogohlantrlganmi
+        public bool IsWorkingDay { get; set; } 
         public DateTime  CalculatedAt { get; set; }
         public TimeOnly  FirstEntryTime { get; set; }
         public TimeOnly LastLeavingTime { get; set; }//ketish vaqt 

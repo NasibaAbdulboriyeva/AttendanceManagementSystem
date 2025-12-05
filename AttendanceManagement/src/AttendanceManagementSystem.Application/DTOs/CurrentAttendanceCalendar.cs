@@ -12,6 +12,7 @@ namespace AttendanceManagementSystem.Application.DTOs
         public int RemainingLateMinutes { get; set; }
         public string? Description { get; set; }
         public bool IsJustified { get; set; }// ogohlatrlganmi
+        public bool IsWorkingDay { get; set; }// ogohlatrlganmi
         public DateTime CalculatedAt { get; set; }
         public TimeOnly FirstEntryTime { get; set; }
         public TimeOnly LastLeavingTime { get; set; }//ketish vaqt 

@@ -61,7 +61,7 @@ namespace AttendanceManagementSystem.Application.Services
             ICollection<T> ttLockUsers;
             try
             {
-                // API'dan ma'lumotlarni olish (searchStr = null, orderBy = 1)
+              
                 ttLockUsers = await fetchFunc(null, 1);
             }
             catch (Exception ex)
@@ -78,10 +78,10 @@ namespace AttendanceManagementSystem.Application.Services
             {
                 Employee? employee = null;
 
-                // 1. Ma'lumotlar bazasidan qidirish (TTLock ID asosida - TUZATILGAN MANTIQ)
+               
                 if (ttUser is TTLockIcCardDto icCardDto)
                 {
-                    // 💡 TUZATILGAN: CardName o'rniga CardId orqali qidirish
+                    
                     if (icCardDto.CardId > 0)
                     {
                         employee = await _employeeRepository.GetEmployeeByUsernameAsync(icCardDto.CardName);
@@ -90,22 +90,19 @@ namespace AttendanceManagementSystem.Application.Services
 
                 else if (ttUser is TTLockFingerprintDto fingerprintDto)
                 {
-                    //   TUZATILGAN: FingerprintName o'rniga FingerprintId orqali qidirish
+                   
                     if (fingerprintDto.FingerprintId > 0)
                     {
                         employee = await _employeeRepository.GetEmployeeByUsernameAsync(fingerprintDto.FingerprintName);
                     }
                 }
 
-                // Agar qidiruv TTLock ID orqali natija bermasa, nom bo'yicha qidiruvni o'tkazib yuboramiz.
-                // Biz yuqorida ID asosida qidirishni aniqlashtirdik, endi shu yerdagi mantiqni ID qidiruviga o'zgartirdik.
-
-                // 2. Yangi Employee yaratish yoki mavjudini aniqlash
+             
                 bool isNew = (employee == null);
 
                 if (isNew)
                 {
-                    // 💡 Nullable bo'lmagan maydonlar uchun boshlang'ich qiymat berish
+                  
                     employee = new Employee
                     {
                         CreatedAt = DateTime.Now,
@@ -115,10 +112,8 @@ namespace AttendanceManagementSystem.Application.Services
                     };
                 }
 
-                // 3. Ma'lumotlarni Employee'ga maplash
-                mapAction(employee, ttUser); // employee endi null bo'lmaydi
-
-                // 4. Ma'lumotlar bazasiga saqlash
+              
+                mapAction(employee, ttUser); 
                 if (isNew)
                 {
                     await _employeeRepository.AddEmployeeAsync(employee);
@@ -133,7 +128,6 @@ namespace AttendanceManagementSystem.Application.Services
 
             return syncedCount;
         }
-
 
 
         public async Task DeactivateEmployeeAsync(long id)
@@ -155,6 +149,11 @@ namespace AttendanceManagementSystem.Application.Services
             var employees = await _employeeRepository.GetAllEmployeesAsync();
             // Entity ni DTO ga konvertatsiya qilish
             return employees.Select(MapToDto).ToList();
+        }
+        public async Task<ICollection<EmployeeScheduleDto>> GetAllSchedulesAsync()
+        {
+            var employeeSchedules = await _employeeRepository.GetAllSchedulesAsync();
+            return employeeSchedules.Select(MapToDto).ToList();
         }
 
         public async Task<EmployeeDto?> GetEmployeeByIdAsync(long id)
@@ -228,16 +227,11 @@ namespace AttendanceManagementSystem.Application.Services
                 throw new KeyNotFoundException($"Для сотрудника {scheduleDto.EmployeeId} расписание не найдено. Его нужно создать заранее.");
             }
 
-            // 2. DTO dagi ma'lumotlar bilan mavjud Entity'ni yangilash
-            // Bu qism odatda maxsus 'MapToEntity' (yoki 'UpdateEntity') metodi orqali amalga oshiriladi.
-
-            // Taxmin qilinadigan yangilash:
+           
             existingSchedule.ModifiedAt = DateTime.Now;
             existingSchedule.StartTime = scheduleDto.StartTime;
             existingSchedule.EndTime = scheduleDto.EndTime;
-            // ... boshqa maydonlarni ham yangilang
-
-            // 3. Yangilangan Entity'ni Repository orqali bazaga saqlash
+         
             await _employeeRepository.UpdateScheduleAsync(existingSchedule);
         }
         public async Task<long> GetEmployeeIdByUsernameAsync(string username)

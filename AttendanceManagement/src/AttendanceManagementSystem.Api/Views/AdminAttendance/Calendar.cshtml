@@ -1,5 +1,4 @@
 ﻿@model AttendanceManagementSystem.Api.Models.AttendanceCalendarViewModel
-
 @{
     ViewData["Title"] = "Monthly Calendar";
     var currentMonth = Model.TargetMonth.ToString("MMMM yyyy");
@@ -52,31 +51,50 @@
                 <thead>
                     <tr>
                         <th style="width: 80px;">Дата</th>
-                        <th style="width: 120px;">План. время</th> @* Плановое время прихода *@
-                        <th style="width: 120px;">Факт. приход (Ручной ввод)</th> @* Факт. время прихода *@
+                        <th style="width: 100px;">Рабочий день</th> @* IsWorkingDay ustuni *@
+                        <th style="width: 120px;">План. время</th>
+                        <th style="width: 120px;">Факт. приход (Ручной ввод)</th>
                         <th style="width: 100px;">Опоздание (мин)</th>
-                        <th style="width: 100px;">Обосновано</th> @* Checkbox turadigan joy *@
-                        <th>Причина/комментарий</th> @* Input turadigan joy *@
+                        <th style="width: 100px;">Обосновано</th>
+                        <th>Причина/комментарий</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var dayLog in Model.MonthlyLogs)
                     {
-                        // Har bir qator o'zining kechikish minutlarini va sababli statusini saqlashi kerak
                         var isLate = dayLog.LateMinutesTotal > 0;
-                        var rowClass = isLate && !dayLog.IsJustified ? "table-danger" : ""; // Faqat sababsiz kechikish qizil rangda
+                        var rowClass = isLate && !dayLog.IsJustified ? "table-danger" : "";
+
+                        // Shanba va yakshanba kunlarini aniqlash
+                        var dayOfWeek = dayLog.EntryDay.DayOfWeek;
+                        var isWeekend = (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday);
 
                         <tr class="@rowClass"
                             id="log-@dayLog.EntryDay.ToString("yyyyMMdd")"
                             data-late-minutes="@dayLog.LateMinutesTotal"
-                            data-is-justified="@dayLog.IsJustified.ToString().ToLower()">
+                            data-is-justified="@dayLog.IsJustified.ToString().ToLower()"
+                            data-is-working-day="@dayLog.IsWorkingDay.ToString().ToLower()">
 
                             <td>@dayLog.EntryDay.ToString("dd.MM")</td>
 
-                            @* 1. Planlashtirilgan kirish vaqti (Tahrirlanmaydi) *@
+                            @* IsWorkingDay Checkbox va Vizual Status *@
+                            <td class="text-center working-day-cell">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <input type="checkbox"
+                                           data-employee-id="@dayLog.EmployeeId"
+                                           data-entry-day="@dayLog.EntryDay.ToString("yyyy-MM-dd")"
+                                           checked="@dayLog.IsWorkingDay"
+                                           class="working-day-checkbox mr-2"
+                                           style="transform: scale(1.5);" />
+
+                                    <span class="working-day-visual-icon @(dayLog.IsWorkingDay ? "text-primary" : "text-muted") font-weight-bold">
+                                        @(dayLog.IsWorkingDay ? "🔵" : "⚪")
+                                    </span>
+                                </div>
+                            </td>
+
                             <td>@(dayLog.ScheduledStartTime != TimeSpan.Zero ? dayLog.ScheduledStartTime.ToString(@"hh\:mm") : "—")</td>
 
-                            @* 2. QO'LDA KIRITISH INPUTI *@
                             <td>
                                 @{
                                     var entryTimeString = dayLog.FirstEntryTime != default ? FormatTime(dayLog.FirstEntryTime) : "";
@@ -87,13 +105,10 @@
                                        value="@entryTimeString"
                                        class="form-control form-control-sm manual-entry-time" />
                             </td>
-
-                            @* 3. Kech qolish minutlari - ENDI QIZIL BADGE ISHLATILADI *@
                             <td class="late-minutes-cell text-center">
                                 @if (isLate)
                                 {
-                                    <span class="badge badge-info text-dark current-late-minutes">@dayLog.LateMinutesTotal</span>
-                                   
+                                    <span class="badge badge-warning text-dark current-late-minutes">@dayLog.LateMinutesTotal</span>
                                 }
                                 else
                                 {
@@ -101,8 +116,6 @@
                                 }
                             </td>
 
-
-                            @* 4. SABABLI CHECKBOX va VIZUAL STATUS *@
                             <td class="text-center justify-status-cell">
                                 @if (dayLog.FirstEntryTime != default)
                                 {
@@ -115,7 +128,7 @@
                                                style="transform: scale(1.5);" />
 
                                         <span class="justify-visual-icon @(dayLog.IsJustified ? "text-success" : "text-secondary") font-weight-bold">
-                                            @(dayLog.IsJustified ? "✅" : "❌")
+                                            @(dayLog.IsJustified ? "_✅" : "_❌")
                                         </span>
                                     </div>
                                 }
@@ -152,7 +165,6 @@
 
             const MONTHLY_LIMIT = 80;
 
-            // Xatolarni ko'rsatish uchun yordamchi funksiya
             function showFeedback(element, isSuccess) {
                 element.removeClass('is-valid is-invalid');
                 if (isSuccess) {
@@ -165,19 +177,14 @@
                 }, 1500);
             }
 
-            // =========================================================
-            // A. Oylik hisobotni yangilash mantig'i
-            // =========================================================
             function updateMonthlySummary() {
                 let totalUnjustifiedLate = 0;
 
-                // Har bir qatordan ma'lumotlarni o'qib chiqish
                 $('tbody tr').each(function () {
                     const row = $(this);
                     const lateMinutes = parseInt(row.data('late-minutes') || 0);
                     const isJustified = row.data('is-justified') === 'true';
 
-                    // Faqat kechikish bo'lsa va sababsiz bo'lsa, qo'shamiz
                     if (lateMinutes > 0 && !isJustified) {
                         totalUnjustifiedLate += lateMinutes;
                     }
@@ -187,10 +194,8 @@
                 const statusSpan = $('#monthly-remaining-late-status');
                 const totalLateSpan = $('#monthly-total-late');
 
-                // Yangi totalni UI ga yozish
                 totalLateSpan.text(totalUnjustifiedLate);
 
-                // Limit statusini yangilash
                 statusSpan.removeClass('text-success text-danger');
                 if (remainingLate < 0) {
                     statusSpan.addClass('text-danger');
@@ -201,11 +206,10 @@
                 }
             }
 
-
             // =========================================================
-            // B. SABABINI BELGILASH (JUSTIFICATION CHECKBOX) MANTIQI
+            // YANGI: IsWorkingDay CHECKBOX MANTIQI
             // =========================================================
-            $('.justify-checkbox').on('change', function () {
+            $('.working-day-checkbox').on('change', function () {
                 var checkbox = $(this);
                 var row = checkbox.closest('tr');
                 var isChecked = checkbox.is(':checked');
@@ -213,12 +217,52 @@
                 var entryDay = checkbox.data('entry-day');
 
                 // Vizual ikonkani yangilash
+                const visualIcon = row.find('.working-day-visual-icon');
+                visualIcon.removeClass('text-primary text-muted');
+                if (isChecked) {
+                    visualIcon.addClass('text-primary').text('🔵');
+                } else {
+                    visualIcon.addClass('text-muted').text('⚪');
+                }
+
+                $.ajax({
+                    url: '@Url.Action("UpdateWorkingDayStatus", "AdminAttendance")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        EmployeeId: employeeId,
+                        EntryDay: entryDay,
+                        IsWorkingDay: isChecked
+                    }),
+                    success: function (response) {
+                        showFeedback(checkbox, true);
+                        row.data('is-working-day', isChecked.toString().toLowerCase());
+                    },
+                    error: function (xhr, status, error) {
+                        showFeedback(checkbox, false);
+                        alert("Ошибка: Статус рабочего дня не сохранен.");
+                        // Xatolik bo'lsa, avvalgi holatga qaytarish
+                        checkbox.prop('checked', !isChecked);
+                        row.data('is-working-day', (!isChecked).toString().toLowerCase());
+                        visualIcon.removeClass('text-primary text-muted');
+                        visualIcon.addClass(!isChecked ? 'text-primary' : 'text-muted').text(!isChecked ? '🔵' : '⚪');
+                    }
+                });
+            });
+
+            $('.justify-checkbox').on('change', function () {
+                var checkbox = $(this);
+                var row = checkbox.closest('tr');
+                var isChecked = checkbox.is(':checked');
+                var employeeId = checkbox.data('employee-id');
+                var entryDay = checkbox.data('entry-day');
+
                 const visualIcon = row.find('.justify-visual-icon');
                 visualIcon.removeClass('text-success text-secondary');
                 if (isChecked) {
-                    visualIcon.addClass('text-success').text('✅');
+                    visualIcon.addClass('text-success').text('_✅');
                 } else {
-                    visualIcon.addClass('text-secondary').text('❌');
+                    visualIcon.addClass('text-secondary').text('_❌');
                 }
 
                 $.ajax({
@@ -232,11 +276,8 @@
                     }),
                     success: function (response) {
                         showFeedback(checkbox, true);
-
-                        // Qatorning justified ma'lumotini yangilash
                         row.data('is-justified', isChecked.toString().toLowerCase());
 
-                        // Kechikish bo'lsa, qator rangini yangilash
                         const lateMinutes = parseInt(row.data('late-minutes') || 0);
                         if (lateMinutes > 0) {
                             if (isChecked) {
@@ -246,26 +287,20 @@
                             }
                         }
 
-                        // Oylik hisobotni yangilash
                         updateMonthlySummary();
                     },
                     error: function (xhr, status, error) {
                         showFeedback(checkbox, false);
-                        alert("Xato: Sabab statusi saqlanmadi.");
-                        // Agar xato bo'lsa, checkbox va vizual ikonkani avvalgi holatiga qaytarish
+                        alert("Ошибка: Статус оправдания не сохранен.");
                         checkbox.prop('checked', !isChecked);
                         row.data('is-justified', (!isChecked).toString().toLowerCase());
                         visualIcon.removeClass('text-success text-secondary');
-                        visualIcon.addClass(!isChecked ? 'text-success' : 'text-secondary').text(!isChecked ? '✅' : '❌');
-                        updateMonthlySummary(); // Agar avvalgi holatiga qaytarilgan bo'lsa, umumiy totalni ham qayta hisoblash
+                        visualIcon.addClass(!isChecked ? 'text-success' : 'text-secondary').text(!isChecked ? '_✅' : '_❌');
+                        updateMonthlySummary();
                     }
                 });
             });
 
-            // =========================================================
-            // C. KOMMENTARIYA KIRTISH (INPUT BLUR) MANTIQI
-            // =========================================================
-            // Bu yerda Controllerda 'UpdateDescription' nomli Action'ingiz bor deb faraz qilamiz
             $('.comment-input').on('blur', function () {
                 var input = $(this);
                 var employeeId = input.data('employee-id');
@@ -273,7 +308,6 @@
                 var description = input.val();
 
                 if (description === input.data('original-value')) {
-                    // Agar o'zgarish bo'lmasa, saqlashga urinish shart emas
                     return;
                 }
 
@@ -287,7 +321,6 @@
                         Description: description
                     }),
                     beforeSend: function () {
-                        // Original qiymatni saqlash
                         input.data('original-value', input.val());
                     },
                     success: function (response) {
@@ -295,22 +328,27 @@
                     },
                     error: function (xhr, status, error) {
                         showFeedback(input, false);
-                        console.error("Комментарийни сақлашда хато:", error);
+                        console.error("Ошибка сохранения комментария:", error);
                     }
                 });
             });
 
-            // =========================================================
-            // D. QO'LDA VAQT KIRITISH (MANUAL TIME INPUT) MANTIQI
-            // =========================================================
             $('.manual-entry-time').on('blur', function () {
                 var input = $(this);
-                var manualEntryTime = input.val(); // Format: HH:mm
+                var manualEntryTime = input.val();
                 var employeeId = input.data('employee-id');
                 var entryDay = input.data('entry-day');
                 var row = input.closest('tr');
 
-                // Agar bo'sh qoldirilsa, serverga "null" yoki "default" qiymatini yuborish kerak.
+                if (manualEntryTime === input.data('original-value')) {
+                    return;
+                }
+
+                if (!confirm('Вы действительно хотите сохранить это время?')) {
+                    input.val(input.data('original-value'));
+                    return;
+                }
+
                 const manualTimeToSend = manualEntryTime === "" ? "00:00:00" : manualEntryTime + ":00";
 
                 $.ajax({
@@ -324,13 +362,10 @@
                     }),
                     success: function (response) {
                         showFeedback(input, true);
-
-                        // response.lateMinutes - yangi hisoblangan kechikish minutlari bo'lishi kerak
+                        input.data('original-value', manualEntryTime);
 
                         if (response.isSuccess && response.lateMinutes !== undefined) {
                             const newLateMinutes = response.lateMinutes;
-
-                            // 1. Kechikish minutlarini yangilash
                             const lateMinutesSpan = row.find('.late-minutes-cell .current-late-minutes');
 
                             lateMinutesSpan.removeClass('badge badge-warning').text('—');
@@ -338,10 +373,8 @@
                                 lateMinutesSpan.addClass('badge badge-warning').text(newLateMinutes);
                             }
 
-                            // 2. Qatorning kechikish ma'lumotini yangilash
                             row.data('late-minutes', newLateMinutes);
 
-                            // 3. Qator rangini yangilash (agar kechikish bo'lsa va sababsiz bo'lsa)
                             const isJustified = row.data('is-justified') === 'true';
 
                             if (newLateMinutes > 0 && !isJustified) {
@@ -350,26 +383,27 @@
                                 row.removeClass('table-danger');
                             }
 
-                            // 4. Oylik hisobotni yangilash
                             updateMonthlySummary();
                         } else {
-                            // Agar serverdan to'liq ma'lumot kelmasa
-                            console.warn("Serverdan to'liq yangilangan ma'lumotlar kelmadi. Sahifani yangilash tavsiya etiladi.");
+                            console.warn("Неполные данные от сервера.");
                         }
                     },
                     error: function (xhr, status, error) {
                         showFeedback(input, false);
-                        alert("Xato: Vaqtni qo'lda kiritishda xatolik yuz berdi.");
+                        alert("Ошибка: Время не сохранено.");
+                        input.val(input.data('original-value'));
                     }
                 });
             });
 
-            // Sahifa yuklanganda barcha comment inputlarining original qiymatini saqlab qo'yish
+            $('.manual-entry-time').each(function () {
+                $(this).data('original-value', $(this).val());
+            });
+
             $('.comment-input').each(function () {
                 $(this).data('original-value', $(this).val());
             });
 
-            // Sahifa yuklanganda umumiy hisobni dastlabki hisoblash
             updateMonthlySummary();
         });
     </script>
