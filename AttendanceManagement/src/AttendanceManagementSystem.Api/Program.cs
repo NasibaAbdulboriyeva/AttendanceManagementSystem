@@ -24,7 +24,6 @@ namespace AttendanceManagementSystem.Api
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
             app.UseRouting();
 
             app.UseAuthorization();

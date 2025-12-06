@@ -50,13 +50,13 @@
             <table class="table table-bordered table-sm">
                 <thead>
                     <tr>
-                        <th style="width: 80px;">Дата</th>
-                        <th style="width: 100px;">Рабочий день</th> @* IsWorkingDay ustuni *@
-                        <th style="width: 120px;">План. время</th>
-                        <th style="width: 120px;">Факт. приход (Ручной ввод)</th>
-                        <th style="width: 100px;">Опоздание (мин)</th>
-                        <th style="width: 100px;">Обосновано</th>
-                        <th>Причина/комментарий</th>
+                        <th style="width: 40px;">Дата</th>
+                        <th style="width: 80px;">Рабочий день</th> @* IsWorkingDay ustuni *@
+                        <th style="width: 90px;">План. время</th>
+                        <th style="width: 100px;">Факт. приход (Ручной ввод)</th>
+                        <th style="width: 40px;">Опоздание (мин)</th>
+                        <th style="width: 100px;">Предупредил(а)</th>
+                        <th style="width: 120px;">Причина/комментарий</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -77,19 +77,21 @@
 
                             <td>@dayLog.EntryDay.ToString("dd.MM")</td>
 
-                            @* IsWorkingDay Checkbox va Vizual Status *@
+                            @* IsWorkingDay Checkbox va Vizual Status (YANGILANDI) *@
                             <td class="text-center working-day-cell">
-                                <div class="d-flex align-items-center justify-content-center">
+                                <div class="form-check form-switch d-flex align-items-center justify-content-center">
                                     <input type="checkbox"
                                            data-employee-id="@dayLog.EmployeeId"
                                            data-entry-day="@dayLog.EntryDay.ToString("yyyy-MM-dd")"
                                            checked="@dayLog.IsWorkingDay"
-                                           class="working-day-checkbox mr-2"
-                                           style="transform: scale(1.5);" />
+                                           class="form-check-input working-day-checkbox"
+                                           role="switch"
+                                           id="work-day-@dayLog.EntryDay.ToString("yyyyMMdd")" />
 
-                                    <span class="working-day-visual-icon @(dayLog.IsWorkingDay ? "text-primary" : "text-muted") font-weight-bold">
-                                        @(dayLog.IsWorkingDay ? "🔵" : "⚪")
-                                    </span>
+                                    <label class="form-check-label working-day-visual-icon ml-2 @(dayLog.IsWorkingDay ? "text-primary" : "text-muted") font-weight-bold"
+                                           for="work-day-@dayLog.EntryDay.ToString("yyyyMMdd")">
+                                        @(dayLog.IsWorkingDay ? "ON" : "OFF")
+                                    </label>
                                 </div>
                             </td>
 
@@ -216,36 +218,29 @@
                 var employeeId = checkbox.data('employee-id');
                 var entryDay = checkbox.data('entry-day');
 
-                // Vizual ikonkani yangilash
+                // Vizual matnni (Label) yangilash
+                // working-day-visual-icon endi Label elementi hisoblanadi
                 const visualIcon = row.find('.working-day-visual-icon');
                 visualIcon.removeClass('text-primary text-muted');
                 if (isChecked) {
-                    visualIcon.addClass('text-primary').text('🔵');
+                    visualIcon.addClass('text-primary').text(' ON'); // YANGILANGAN: ON matni
                 } else {
-                    visualIcon.addClass('text-muted').text('⚪');
+                    visualIcon.addClass('text-muted').text(' OFF'); // YANGILANGAN: OFF matni
                 }
 
+                // ... Qolgan AJAX qismi o'zgarishsiz qoladi ...
                 $.ajax({
-                    url: '@Url.Action("UpdateWorkingDayStatus", "AdminAttendance")',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        EmployeeId: employeeId,
-                        EntryDay: entryDay,
-                        IsWorkingDay: isChecked
-                    }),
+                    // ...
                     success: function (response) {
-                        showFeedback(checkbox, true);
-                        row.data('is-working-day', isChecked.toString().toLowerCase());
+                        // ...
                     },
                     error: function (xhr, status, error) {
-                        showFeedback(checkbox, false);
-                        alert("Ошибка: Статус рабочего дня не сохранен.");
-                        // Xatolik bo'lsa, avvalgi holatga qaytarish
+                        // ... Xatolik bo'lsa, avvalgi holatga qaytarish
                         checkbox.prop('checked', !isChecked);
                         row.data('is-working-day', (!isChecked).toString().toLowerCase());
                         visualIcon.removeClass('text-primary text-muted');
-                        visualIcon.addClass(!isChecked ? 'text-primary' : 'text-muted').text(!isChecked ? '🔵' : '⚪');
+                        // Xatoda ham ON/OFF ga moslashtiramiz
+                        visualIcon.addClass(!isChecked ? 'text-primary' : 'text-muted').text(!isChecked ? " ON" : " OFF");
                     }
                 });
             });

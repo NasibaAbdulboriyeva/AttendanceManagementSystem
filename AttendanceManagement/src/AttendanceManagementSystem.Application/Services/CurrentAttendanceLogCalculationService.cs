@@ -8,6 +8,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IAttendanceLogRepository _attendanceLogRepository;
     private readonly ICurrentAttendanceLogRepository _currentAttendanceLogRepository;
+
     public CurrentAttendanceLogCalculationService(IAttendanceLogRepository attendanceLogRepository, IEmployeeRepository employeeRepository, ICurrentAttendanceLogRepository currentAttendanceLogRepository)
     {
         _attendanceLogRepository = attendanceLogRepository;
@@ -30,6 +31,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             await GetAndSaveMonthlyAttendanceCalendarAsync(employee.EmployeeId, month);
         }
     }
+
     public bool IsWorkingDay(DateTime date)
     {
         if (date.DayOfWeek == DayOfWeek.Saturday ||
@@ -66,6 +68,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         var lateDuration = actualEntryDateTime - scheduledStartDateTime;
         return (int)lateDuration.TotalMinutes;
     }
+
     public async Task<ICollection<CurrentAttendanceCalendar>> GetAndSaveMonthlyAttendanceCalendarAsync(long employeeId, DateTime month)
     {
         var startDate = new DateTime(month.Year, 11, 1);
@@ -86,7 +89,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
                     FirstEntry = g.OrderBy(log => log.RecordedTime).First()
                 }
             );
-
+                
         var existingLogDates = new HashSet<DateOnly>(
             allExistingLogs
                 .Select(log => DateOnly.FromDateTime(log.RecordedTime.Date))
@@ -104,6 +107,8 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
 
                 calendarDto.LateMinutesTotal = CalculateLateMinutes(calendarDto, targetDate);
                 monthlyCalendar.Add(calendarDto);
+
+
             }
 
             else
@@ -188,13 +193,13 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             CreatedAt = DateTime.Now
         };
     }
+
     private CurrentAttendanceCalendar MapEntityToCalendarDto(CurrentAttendanceLog entity, EmployeeSchedule schedule)
     {
 
         return new CurrentAttendanceCalendar
         {
             EmployeeId = entity.EmployeeId,
-
             EmployeeFullName = "UserName",
             ScheduledStartTime = schedule.StartTime,
             LateMinutesTotal = entity.LateArrivalMinutes,
@@ -248,9 +253,9 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             scheduledStartTime = TimeSpan.Zero;
         }
 
-
         log.FirstEntryTime = TimeOnly.FromTimeSpan(dto.ManualEntryTime);
         log.Description = dto.Description;
+        log.ModifiedAt= DateTime.Now;
 
         var tempCalendarDto = new CurrentAttendanceCalendar
         {
@@ -258,9 +263,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             ScheduledStartTime = scheduledStartTime.Value
         };
 
-
         log.LateArrivalMinutes = CalculateLateMinutes(tempCalendarDto, log.EntryDay.ToDateTime(TimeOnly.MinValue));
-
 
         await _currentAttendanceLogRepository.SaveChangesAsync();
     }
@@ -278,6 +281,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         }
 
         log.IsJustified = dto.IsJustified;
+        log.ModifiedAt = DateTime.Now;
 
         await _currentAttendanceLogRepository.SaveChangesAsync();
     }
