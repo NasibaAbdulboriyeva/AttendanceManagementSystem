@@ -2,16 +2,17 @@
 @using AttendanceManagementSystem.Domain.Entities
 
 @{
-    ViewData["Title"] = "Управление графиками сотрудников";
+    ViewData["Title"] = "Управление рабочими графиками";
 }
 
-<h2 class="mb-4 text-primary">🗓️ Управление графиками сотрудников</h2>
-<p class="text-muted">Общие настройки графика для сотрудников .</p>
+<h2 class="mb-4 text-primary">🗓️ Управление рабочими графиками сотрудников</h2>
+<p class="text-muted">Просмотр и настройка рабочего времени (Начало/Конец) и лимита опозданий для каждого активного сотрудника.</p>
 
 @if (!string.IsNullOrEmpty(Model.Message))
 {
+    // Xabar turiga qarab rang belgilash
     var alertClass = Model.Message.StartsWith("✅") ? "alert-success" : "alert-danger";
-    <div class="alert @alertClass mt-3">@Model.Message</div>
+    <div class="alert @alertClass mt-3" role="alert">@Model.Message</div>
 }
 
 <form asp-action="ScheduleSetup" method="post">
@@ -21,21 +22,32 @@
         <table class="table table-bordered table-hover shadow-sm">
             <thead class="table-primary">
                 <tr>
-                    <th>@Html.DisplayNameFor(m => m.Schedules.First().FullName)</th>
-                    <th>@Html.DisplayNameFor(m => m.Schedules.First().StartTime)</th>
-                    <th>@Html.DisplayNameFor(m => m.Schedules.First().EndTime)</th>
-                    <th>@Html.DisplayNameFor(m => m.Schedules.First().LimitInMinutes)</th>
-                    <th>@Html.DisplayNameFor(m => m.Schedules.First().EmployementType)</th>
+                    <th>ФИО Сотрудника</th>
+                    <th style="width: 120px;">Начало Работы</th>
+                    <th style="width: 120px;">Конец Работы</th>
+                    <th style="width: 120px;">Лимит Опозданий (мин)</th>
+                    <th style="width: 150px;">Тип Занятости</th>
                 </tr>
             </thead>
-           
+
             <tbody>
                 @for (int i = 0; i < Model.Schedules.Count; i++)
                 {
-                    <tr class="@(Model.Schedules[i].EmployeeScheduleId > 0 ? "table-success-light" : "table-warning-light")">
+                    // Ranglar mantig'i: agar ScheduleId > 0 bo'lsa - tahrirlash (yashil), aks holda - yangi kiritish (sariq/ogohlantirish)
+                    var rowClass = Model.Schedules[i].EmployeeScheduleId > 0 ? "table-light-success" : "table-light-warning border border-warning";
+
+                    <tr class="@rowClass">
 
                         <td>
-                            <strong class="text-nowrap">@Model.Schedules[i].FullName</strong>
+                            <strong class="text-nowrap text-dark">@Model.Schedules[i].FullName</strong>
+                            @if (Model.Schedules[i].EmployeeScheduleId == 0)
+                            {
+                                <span class="badge bg-warning text-dark ml-2">New</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success ml-2"></span>
+                            }
 
                             <input type="hidden" asp-for="Schedules[@i].EmployeeId" />
                             <input type="hidden" asp-for="Schedules[@i].EmployeeScheduleId" />
@@ -43,12 +55,12 @@
                         </td>
 
                         <td>
-                            <input asp-for="Schedules[@i].StartTime" type="time" class="form-control" />
+                            <input asp-for="Schedules[@i].StartTime" type="time" class="form-control form-control-sm" />
                             <span asp-validation-for="Schedules[@i].StartTime" class="text-danger small"></span>
                         </td>
 
                         <td>
-                            <input asp-for="Schedules[@i].EndTime" type="time" class="form-control" />
+                            <input asp-for="Schedules[@i].EndTime" type="time" class="form-control form-control-sm" />
                             <span asp-validation-for="Schedules[@i].EndTime" class="text-danger small"></span>
                         </td>
 
@@ -56,6 +68,7 @@
                             <input asp-for="Schedules[@i].LimitInMinutes"
                                    type="number"
                                    min="0"
+                                   max="500" 
                                    class="form-control form-control-sm" />
                             <span asp-validation-for="Schedules[@i].LimitInMinutes" class="text-danger small"></span>
                         </td>
@@ -63,8 +76,9 @@
                         <td>
                             <select asp-for="Schedules[@i].EmployementType"
                                     asp-items="Html.GetEnumSelectList<EmployementType>()"
-                                    class="form-control">
+                                    class="form-control form-control-sm">
                             </select>
+                            <span asp-validation-for="Schedules[@i].EmployementType" class="text-danger small"></span>
                         </td>
                     </tr>
                 }
@@ -73,9 +87,8 @@
     </div>
 
     <div class="mt-4 d-flex justify-content-end">
-        <a asp-action="EmployeeList" class="btn btn-secondary me-2">Вернуться к списку</a>
-        <button type="submit" class="btn btn-primary btn-lg">
-            <i class="fas fa-save me-1"></i> Сохранить все графики
+        <button type="submit" class="btn btn-primary btn-lg shadow">
+            <i class="fas fa-save me-1"></i> Сохранить все изменения
         </button>
     </div>
 </form>
@@ -84,4 +97,14 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <style>
+        /* Agar Bootstrapning maxsus yorug'lik klasslari bo'lmasa, ularni aniqlaymiz */
+        .table-light-success {
+            background-color: #d1e7dd !important; /* Yengil yashil */
+        }
+        .table-light-warning {
+            background-color: #fff3cd !important; /* Yengil sariq */
+        }
+    </style>
 }

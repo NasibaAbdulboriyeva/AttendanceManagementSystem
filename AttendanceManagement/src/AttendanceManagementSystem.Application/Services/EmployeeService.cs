@@ -250,6 +250,7 @@ namespace AttendanceManagementSystem.Application.Services
         {
             return new EmployeeDto
             {
+                EmployeeId = employee.EmployeeId,
                 UserName = employee.UserName,
                 CardId = employee.CardId,
                 CardNumber = employee.CardNumber,
@@ -295,6 +296,7 @@ namespace AttendanceManagementSystem.Application.Services
             return new EmployeeScheduleDto
             {
                 EmployeeId = entity.EmployeeId,
+                EmployeeScheduleId=entity.EmployeeScheduleId,
                 LimitInMinutes = entity.LimitInMinutes,
                 StartTime = entity.StartTime,
                 EndTime = entity.EndTime,

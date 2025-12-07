@@ -116,7 +116,61 @@ namespace AttendanceManagementSystem.Api.Controllers
             return View("Calendar", emptyViewModel);
         }
 
-      
+
+        [HttpGet]
+        [HttpPost] // Oyni tanlash formasi POST so'rovi yuborishi uchun
+       public async Task<IActionResult> LateArrivalsSummary(DateTime? targetMonth)
+        {
+            // Oyni aniqlash (Default: joriy oy)
+            var month = targetMonth.HasValue
+                ? new DateTime(targetMonth.Value.Year, targetMonth.Value.Month, 1)
+                : new DateTime(DateTime.Now.Year, 11, 1);
+
+            // 1. Barcha xodimlar ro'yxatini yuklash va EmployeeSummary formatiga o'tkazish (Xatolik tuzatildi)
+            var allEmployeesRaw = await _employeeService.GetAllActiveEmployeesAsync();
+
+            var employeesSummary = allEmployeesRaw
+                .Select(e => new EmployeeSummary
+                {
+                    EmployeeId = e.EmployeeId,
+                    FullName = e.UserName,
+                    TotalLateMinutes = 0 // Boshlang'ich qiymat
+                })
+                .ToList();
+
+            // 2. Barcha xodimlar uchun kech qolish minutlarini hisoblash
+            // YANGI YONDASHUV: Endi servis metodi butun employeesSummary ro'yxatini qabul qiladi
+            // va har bir xodim uchun TotalLateMinutes ni to'g'ridan-to'g'ri yangilaydi.
+            // (Agar servis metodi Dictionary qaytarsa, 3-qadam ishlaydi)
+
+            // Servis metodini Dictionary qaytarish mantig'ini saqlab qolgan holda chaqiramiz:
+            var lateSummaryDictionary = await _calculationService.GetEmployeesLateSummaryAsync(month);
+
+            // 3. Xodimlar ro'yxatini kech qolish minutlari bilan birlashtirish (Dictionary yordamida)
+            foreach (var employee in employeesSummary)
+            {
+                if (lateSummaryDictionary.TryGetValue(employee.EmployeeId, out int totalMinutes))
+                {
+                    // Agar kech qolish minutlari topilsa, EmployeeSummary obyektiga yuklash
+                    employee.TotalLateMinutes = totalMinutes;
+
+                }
+
+            }
+
+            // 4. ViewModel yaratish va natijani View'ga yuborish
+            var model = new AttendanceSummaryViewModel
+            {
+                // To'g'rilangan ro'yxatni uzatish
+                Employees = employeesSummary,
+                TargetMonth = month
+            };
+
+            return View(model);
+        }
+
+        // Eslatma: Eski GetLateMinutesForAllEmployees metodini olib tashlang!
+
 
         [HttpGet]
         public async Task<IActionResult> ViewCalendar(string username, int year, int month)
@@ -157,28 +211,40 @@ namespace AttendanceManagementSystem.Api.Controllers
             return RedirectToAction("EmployeeList");
 
         }
-
         [HttpGet]
         public async Task<IActionResult> ScheduleSetup()
         {
-            var allEmployeeSchedules = await _employeeService.GetAllSchedulesAsync();
             var allEmployeesDto = await _employeeService.GetAllActiveEmployeesAsync();
-
             var viewModel = new EmployeeScheduleViewModel();
+
+            // 1. SuccessMessage ni tekshirish va uni ViewModelga yuklash
+            if (TempData["SuccessMessage"] is string successMessage)
+            {
+                viewModel.Message = successMessage;
+            }
+            // 2. ErrorMessage ni tekshirish va uni ViewModelga yuklash
+            else if (TempData["ErrorMessage"] is string errorMessage)
+            {
+                viewModel.Message = errorMessage;
+            }
 
             foreach (var employeeDto in allEmployeesDto.OrderBy(e => e.UserName))
             {
-               
+                // ... (xodimlar grafigini yuklash logikasi o'zgarmaydi) ...
+
                 var scheduleDto = await _employeeService.GetEmployeeScheduleByEmployeeIdAsync(employeeDto.EmployeeId);
 
                 var item = new ScheduleListItem
                 {
-                    FullName = employeeDto.UserName
+                    FullName = employeeDto.UserName,
+                    // Xodim IDsini saqlashni unutmang, bu POST so'rovi uchun zarur!
+                    // Agar DTO'da EmployeeId bo'lsa, uni ScheduleListItem'ga ham qo'shish kerak.
+                    // Hozircha FullName orqali olishni taxmin qilamiz, ammo bu samarali emas.
                 };
 
                 if (scheduleDto != null)
                 {
-                    
+                    item.EmployeeScheduleId = scheduleDto.EmployeeScheduleId; // IDni saqlash juda muhim
                     item.StartTime = scheduleDto.StartTime;
                     item.EndTime = scheduleDto.EndTime;
                     item.LimitInMinutes = scheduleDto.LimitInMinutes;
@@ -190,7 +256,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View(viewModel);
         }
-       
+
         [HttpPost]
       
         public async Task<IActionResult> UpdateEntryTime([FromBody] UpdateEntryTimeDto dto)
@@ -210,7 +276,6 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return Ok(new { success = true });
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScheduleSetup(EmployeeScheduleViewModel model)
@@ -227,37 +292,58 @@ namespace AttendanceManagementSystem.Api.Controllers
             {
                 foreach (var item in model.Schedules)
                 {
+                    // Eslatma: GetEmployeeIdByUsernameAsync har bir iteratsiyada chaqirilmasligi uchun 
+                    // ma'lumotlar to'g'ri bog'langanligiga ishonch hosil qilish kerak.
+                    // Hozirgi kodda bu amal saqlanib qoladi.
                     var emploeeId = await _employeeService.GetEmployeeIdByUsernameAsync(item.FullName);
+
                     var scheduleDto = new EmployeeScheduleDto
                     {
+                        // EmployeeId ni to'g'ridan-to'g'ri Model.Schedules[@i].EmployeeId dan olish yaxshiroq, 
+                        // ammo hozircha sizning FullName orqali olish kodingiz saqlanadi.
                         EmployeeId = emploeeId,
                         StartTime = item.StartTime,
                         EndTime = item.EndTime,
                         LimitInMinutes = item.LimitInMinutes,
                         EmployementType = item.EmployementType
                     };
-                    if (item.EmployeeScheduleId == 0)
+
+                    // EmployeeScheduleId ni ham DTOga o'tkazish kerak, agar yangilanish bo'lsa.
+                    // Agar sizning UpdateEmployeeScheduleAsync metodi faqat EmployeeId bo'yicha yangilasa, 
+                    // bu yerda EmployeeScheduleId kerak bo'lmasligi mumkin.
+                    // Agar ID kerak bo'lsa, uni DTOga qo'shing. (Asl kodda bu yo'q edi, shuning uchun qo'shmadim.)
+                    var schedule = await _employeeService.GetEmployeeScheduleByEmployeeIdAsync(emploeeId);
+                    if (schedule.EmployeeScheduleId== 0)
                     {
                         await _employeeService.AddEmployeeScheduleAsync(scheduleDto);
                     }
                     else
                     {
+                        // Agar sizning DTO'ngiz EmployeeScheduleId ni talab qilsa:
+                        // scheduleDto.EmployeeScheduleId = item.EmployeeScheduleId;
                         await _employeeService.UpdateEmployeeScheduleAsync(scheduleDto);
-
                     }
 
                     updatedCount++;
                 }
 
-                model.Message = $"✅Все {updatedCount} расписаний успешно сохранены или обновлены!";
+                // Muvaffaqiyat xabarini TempData orqali saqlaymiz, chunki biz Redirect qilmoqdamiz.
+                TempData["SuccessMessage"] = $"✅ Все {updatedCount} расписаний успешно сохранены или обновлены!";
+
+                // ******************************************************************
+                // 🔥 Asosiy o'zgarish: GET metodiga yo'naltirish
+                // ******************************************************************
+                return RedirectToAction(nameof(ScheduleSetup));
             }
             catch (Exception ex)
             {
-                model.Message = $"❌ Произошла ошибка при сохранении: {ex.Message}";
-              
-            }
+                // Xato xabarini TempData orqali saqlaymiz
+                TempData["ErrorMessage"] = $"❌ Произошла ошибка при сохранении: {ex.Message}";
 
-            return View(model);
+                // Xato bo'lsa ham GET metodiga yo'naltirish, lekin ba'zida POST so'rovda qolish maqbulroq.
+                // Hozircha GET ga yo'naltiramiz.
+                return RedirectToAction(nameof(ScheduleSetup));
+            }
         }
     }
 }

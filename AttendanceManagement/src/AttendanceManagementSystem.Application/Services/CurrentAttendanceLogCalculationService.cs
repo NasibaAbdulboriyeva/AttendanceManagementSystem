@@ -16,9 +16,21 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         _currentAttendanceLogRepository = currentAttendanceLogRepository;
     }
 
-    public Task<ICollection<CurrentAttendanceCalendar>> GetLateArrivalsForPeriodAsync(string username, DateTime month)
+    public async Task<int> GetLateArrivalsForPeriodAsync(long employeeId, DateTime month)
     {
-        throw new NotImplementedException();
+        return await _currentAttendanceLogRepository.GetLateArrivalsForPeriodAsync(employeeId, month);
+    }
+    public async Task<Dictionary<long, int>> GetEmployeesLateSummaryAsync(DateTime month)
+    {
+        var activeEmployeeIds = await _employeeRepository.GetAllActiveEmployeesAsync();
+        var minutes = 0;
+        var lateSummary = new Dictionary<long, int>();
+        foreach (var employee in activeEmployeeIds)
+        {
+            minutes = await _currentAttendanceLogRepository.GetLateArrivalsForPeriodAsync(employee.EmployeeId, month);
+            lateSummary.Add(employee.EmployeeId, minutes);
+        }
+        return lateSummary;
     }
 
     public async Task ProcessAllEmployeesMonthlyAttendanceAsync(DateTime month)
