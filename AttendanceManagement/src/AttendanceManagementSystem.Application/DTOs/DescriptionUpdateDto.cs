@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace AttendanceManagementSystem.Application.DTOs
 {
-    public class UpdateWorkingDayRequest
+    public class DescriptionUpdateDto
     {
-        public long EmployeeId { get; set; }
-        public DateTime EntryDay { get; set; }
-        public bool IsWorkingDay { get; set; }
+        public int EmployeeId { get; set; }
+        public DateOnly EntryDay { get; set; }
+        public string? Description  { get; set; }
     }
 }

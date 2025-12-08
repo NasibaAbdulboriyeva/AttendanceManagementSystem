@@ -208,9 +208,115 @@
                 }
             }
 
-            // =========================================================
-            // YANGI: IsWorkingDay CHECKBOX MANTIQI
-            // =========================================================
+            // // =========================================================
+            // // YANGI: IsWorkingDay CHECKBOX MANTIQI
+            // // =========================================================
+            // $('.working-day-checkbox').on('change', function () {
+            //     var checkbox = $(this);
+            //     var row = checkbox.closest('tr');
+            //     var isChecked = checkbox.is(':checked');
+            //     var employeeId = checkbox.data('employee-id');
+            //     var entryDay = checkbox.data('entry-day');
+
+            //     // Vizual matnni (Label) yangilash
+            //     // working-day-visual-icon endi Label elementi hisoblanadi
+            //     const visualIcon = row.find('.working-day-visual-icon');
+            //     visualIcon.removeClass('text-primary text-muted');
+            //     if (isChecked) {
+            //         visualIcon.addClass('text-primary').text(' ON'); // YANGILANGAN: ON matni
+            //     } else {
+            //         visualIcon.addClass('text-muted').text(' OFF'); // YANGILANGAN: OFF matni
+            //     }
+
+            //     // ... Qolgan AJAX qismi o'zgarishsiz qoladi ...
+            //     $.ajax({
+            //         // ...
+            //         success: function (response) {
+            //             // ...
+            //         },
+            //         error: function (xhr, status, error) {
+            //             // ... Xatolik bo'lsa, avvalgi holatga qaytarish
+            //             checkbox.prop('checked', !isChecked);
+            //             row.data('is-working-day', (!isChecked).toString().toLowerCase());
+            //             visualIcon.removeClass('text-primary text-muted');
+            //             // Xatoda ham ON/OFF ga moslashtiramiz
+            //             visualIcon.addClass(!isChecked ? 'text-primary' : 'text-muted').text(!isChecked ? " ON" : " OFF");
+            //         }
+            //     });
+            // });
+
+
+        // Global funksiya
+        function setGlobalWorkingDayStatus(entryDay, newStatus, button) {
+            // ... (Funksiya kodi o'zgarishsiz qoladi) ...
+            const statusMessage = $('#global-status-message');
+            const statusText = newStatus ? "Рабочий день" : "Выходной";
+
+            if (!confirm(`Вы уверены, что хотите установить '${entryDay}' как ${statusText} для ВСЕХ сотрудников?`)) {
+                return;
+            }
+            // ... (AJAX so'rovi mantiqi) ...
+            
+            // Siz yuborgan kodning to'liq qismi shu yerga o'tishi kerak
+            button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Обновление...');
+            statusMessage.removeClass('text-success text-danger').addClass('text-info').text('Отправка запроса...');
+
+            $.ajax({
+                url: '@Url.Action("GlobalSetWorkingDayStatus", "AdminAttendance")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    EntryDay: entryDay,
+                    IsWorkingDay: newStatus
+                }),
+                success: function (response) {
+                    if (response.isSuccess) {
+                        statusMessage.removeClass('text-info').addClass('text-success').text(response.message);
+                        setTimeout(function () {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        statusMessage.removeClass('text-info').addClass('text-danger').text("Ошибка: " + response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    statusMessage.removeClass('text-info').addClass('text-danger').text("Ошибка сервера: Статус не обновлен.");
+                    console.error("GlobalSetWorkingDayStatus Error:", xhr.responseText);
+                },
+                complete: function () {
+                    if (!statusMessage.hasClass('text-success')) {
+                        button.prop('disabled', false).html(button.data('original-html'));
+                    }
+                }
+            });
+        }
+
+
+        $(document).ready(function () {
+            
+            // Elementlarning sahifada mavjudligini tekshirish
+            if ($('#set-working-day-on').length === 0) {
+                 console.error("Global Set Working Day ON tugmasi topilmadi!");
+                 return;
+            }
+
+
+            // Tugmalarning asl HTML tarkibini saqlash
+            $('#set-working-day-on').data('original-html', $('#set-working-day-on').html());
+            $('#set-working-day-off').data('original-html', $('#set-working-day-off').html());
+
+
+            $('#set-working-day-on, #set-working-day-off').on('click', function () {
+                const button = $(this);
+                // data-status atributining qiymatini to'g'ri olish (boolean)
+                const newStatus = button.data('status') === true || button.data('status') === 'true'; 
+                const targetDay = $('#target-date-global').val();
+
+                setGlobalWorkingDayStatus(targetDay, newStatus, button);
+            });
+        });
+ 
+
             $('.working-day-checkbox').on('change', function () {
                 var checkbox = $(this);
                 var row = checkbox.closest('tr');
@@ -218,32 +324,56 @@
                 var employeeId = checkbox.data('employee-id');
                 var entryDay = checkbox.data('entry-day');
 
-                // Vizual matnni (Label) yangilash
-                // working-day-visual-icon endi Label elementi hisoblanadi
+                if (!confirm('Вы уверены, что изменить статус рабочего дня?')) {
+                    checkbox.prop('checked', !isChecked);
+                    return;
+                }
+
                 const visualIcon = row.find('.working-day-visual-icon');
-                visualIcon.removeClass('text-primary text-muted');
+                visualIcon.removeClass('text-success text-secondary');
                 if (isChecked) {
                     visualIcon.addClass('text-primary').text(' ON'); // YANGILANGAN: ON matni
                 } else {
                     visualIcon.addClass('text-muted').text(' OFF'); // YANGILANGAN: OFF matni
                 }
 
-                // ... Qolgan AJAX qismi o'zgarishsiz qoladi ...
                 $.ajax({
-                    // ...
+                    url: '@Url.Action("UpdateWorkingDayStatus", "AdminAttendance")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        EmployeeId: employeeId,
+                        EntryDay: entryDay,
+                        IsWorkingDay: isChecked
+                    }),
                     success: function (response) {
-                        // ...
+                        showFeedback(checkbox, true);
+                        row.data('is-working-day', isChecked.toString().toLowerCase());
+
+                        const lateMinutes = parseInt(row.data('late-minutes') || 0);
+                        if (lateMinutes > 0) {
+                            if (isChecked) {
+                                row.removeClass('table-danger');
+                            } else {
+                                row.addClass('table-danger');
+                            }
+                        }
+
+                        updateMonthlySummary();
                     },
-                    error: function (xhr, status, error) {
-                        // ... Xatolik bo'lsa, avvalgi holatga qaytarish
+                    error: function () {
+                        showFeedback(checkbox, false);
+                        alert("Ошибка: Статус  не изменен.");
                         checkbox.prop('checked', !isChecked);
-                        row.data('is-working-day', (!isChecked).toString().toLowerCase());
-                        visualIcon.removeClass('text-primary text-muted');
-                        // Xatoda ham ON/OFF ga moslashtiramiz
-                        visualIcon.addClass(!isChecked ? 'text-primary' : 'text-muted').text(!isChecked ? " ON" : " OFF");
                     }
                 });
             });
+
+
+
+
+
+
 
             $('.justify-checkbox').on('change', function () {
                 var checkbox = $(this);
@@ -251,6 +381,11 @@
                 var isChecked = checkbox.is(':checked');
                 var employeeId = checkbox.data('employee-id');
                 var entryDay = checkbox.data('entry-day');
+
+                if (!confirm('Вы уверены, что хотите изменить статус оправдания?')) {
+                    checkbox.prop('checked', !isChecked);
+                    return;
+                }
 
                 const visualIcon = row.find('.justify-visual-icon');
                 visualIcon.removeClass('text-success text-secondary');
@@ -284,17 +419,18 @@
 
                         updateMonthlySummary();
                     },
-                    error: function (xhr, status, error) {
+                    error: function () {
                         showFeedback(checkbox, false);
                         alert("Ошибка: Статус оправдания не сохранен.");
                         checkbox.prop('checked', !isChecked);
-                        row.data('is-justified', (!isChecked).toString().toLowerCase());
-                        visualIcon.removeClass('text-success text-secondary');
-                        visualIcon.addClass(!isChecked ? 'text-success' : 'text-secondary').text(!isChecked ? '_✅' : '_❌');
-                        updateMonthlySummary();
                     }
                 });
             });
+
+
+
+
+
 
             $('.comment-input').on('blur', function () {
                 var input = $(this);

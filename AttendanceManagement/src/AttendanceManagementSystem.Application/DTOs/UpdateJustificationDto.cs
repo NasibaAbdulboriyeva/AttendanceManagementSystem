@@ -8,6 +8,7 @@ namespace AttendanceManagementSystem.Application.DTOs
         public long EmployeeId { get; set; }
         public DateOnly EntryDay { get; set; }
         public bool IsJustified { get; set; }
-        public bool IsWorkingDay { get; set; }
+        public  string Description { get; set; }
+     
     }
 }

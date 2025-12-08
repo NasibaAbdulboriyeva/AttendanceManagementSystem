@@ -18,39 +18,34 @@ namespace AttendanceManagementSystem.Application.Services
 
         public async Task<(int CardsSynced, int FingerprintsSynced)> SyncEmployeeDataAsync()
         {
-
-            // 1. IC Card foydalanuvchilarini sinxronlash
+            
             int cardsSynced = await SyncEmployeesByTypeAsync<TTLockIcCardDto>(
-                // ITTLockService ichidagi metod chaqiruvi
                 (searchStr, orderBy) => _ttLockService.GetAllIcCardRecordsAsync(searchStr, orderBy),
                 (employee, userDto) =>
                 {
-                    // Maplash: CardId va CardNumber Employee entitysiga o'tkaziladi
                     employee.CardId = userDto.CardId;
-                    // Nullable xatolar uchun ehtiyot chorasi
                     employee.CardNumber = userDto.CardNumber ?? string.Empty;
                     if (string.IsNullOrEmpty(employee.UserName))
                         employee.UserName = userDto.CardName ?? string.Empty;
                 });
 
-            // 2. Fingerprint foydalanuvchilarini sinxronlash
             int fingerprintsSynced = await SyncEmployeesByTypeAsync<TTLockFingerprintDto>(
-                // ITTLockService ichidagi metod chaqiruvi
                 (searchStr, orderBy) => _ttLockService.GetAllFingerprintsPaginatedAsync(searchStr, orderBy),
                 (employee, userDto) =>
                 {
                     employee.FingerprintId = userDto.FingerprintId;
-                    // Nullable xatolar uchun ehtiyot chorasi
                     employee.FingerprintNumber = userDto.FingerprintNumber ?? string.Empty;
                     if (string.IsNullOrEmpty(employee.UserName))
+                    {
                         employee.UserName = userDto.FingerprintName ?? string.Empty;
+
+                    }
                 });
 
             return (cardsSynced, fingerprintsSynced);
         }
 
         private async Task<int> SyncEmployeesByTypeAsync<T>(
-            // TTLock'dagi metod LockId'ni qabul qiladi, shuning uchun Func<string?, int, Task<ICollection<T>>> tuzilishini saqlaymiz.
             Func<string?, int, Task<ICollection<T>>> fetchFunc,
             Action<Employee, T> mapAction)
             where T : class
@@ -147,7 +142,6 @@ namespace AttendanceManagementSystem.Application.Services
         public async Task<ICollection<EmployeeDto>> GetAllEmployeesAsync()
         {
             var employees = await _employeeRepository.GetAllEmployeesAsync();
-            // Entity ni DTO ga konvertatsiya qilish
             return employees.Select(MapToDto).ToList();
         }
         public async Task<ICollection<EmployeeScheduleDto>> GetAllSchedulesAsync()
@@ -179,37 +173,25 @@ namespace AttendanceManagementSystem.Application.Services
 
             var scheduleEntity = MapToEntity(scheduleDto);
 
-            // 3. Entity'ni Repository orqali bazaga saqlash
             await _employeeRepository.AddEmployeeScheduleAsync(scheduleEntity);
 
-            // Agar Repository faqat bitta saqlash metodi bo'lsa, u SaveChangesAsync ni chaqiradi.
-
-            // 4. Saqlangan jadvalning ID sini qaytarish
             return scheduleEntity.EmployeeScheduleId;
         }
 
         public async Task<EmployeeScheduleDto?> GetEmployeeScheduleByEmployeeIdAsync(long employeeId)
         {
-            // 1. Repository orqali Schedule Entity'sini olish
             var scheduleEntity = await _employeeRepository.GetScheduleByEmployeeIdAsync(employeeId);
 
             if (scheduleEntity == null)
             {
-                // Agar jadval topilmasa null qaytariladi
-                return null;
+                throw new Exception("Для сотрудника  расписание не найдено.");
             }
 
-            // 2. Entity'ni DTO'ga konvertatsiya qilish
-            // Bu yerda sizning umumiy IEmployeeMapper yoki maxsus IScheduleMapper dan foydalaniladi.
-            // Repozitoriyda yoki alohida Mapperda MapToDto(ScheduleEntity) metodi mavjud deb faraz qilamiz.
-            var scheduleDto = MapToDto(scheduleEntity); // IEmployeeMapper kengaytirilgan deb taxmin qilinadi
+            var scheduleDto = MapToDto(scheduleEntity);
 
             return scheduleDto;
         }
 
-        /// <summary>
-        /// Mavjud ish jadvalini yangilaydi.
-        /// </summary>
         public async Task UpdateEmployeeScheduleAsync(EmployeeScheduleDto scheduleDto)
         {
             if (scheduleDto == null)
@@ -217,13 +199,10 @@ namespace AttendanceManagementSystem.Application.Services
                 throw new ArgumentNullException(nameof(scheduleDto), "Данные таблицы не могут быть пустыми");
             }
 
-            // 1. Avval mavjud Schedule Entity'sini bazadan olib kelishimiz kerak
             var existingSchedule = await _employeeRepository.GetScheduleByEmployeeIdAsync(scheduleDto.EmployeeId);
 
             if (existingSchedule == null)
             {
-                // Agar Schedule mavjud bo'lmasa, xato qaytarish yoki uni yangi qilib yaratish mumkin.
-                // Yangilash (Update) metodida, odatda, mavjud bo'lishi talab qilinadi.
                 throw new KeyNotFoundException($"Для сотрудника {scheduleDto.EmployeeId} расписание не найдено. Его нужно создать заранее.");
             }
 
@@ -307,7 +286,6 @@ namespace AttendanceManagementSystem.Application.Services
         public async Task<ICollection<EmployeeDto>> GetAllActiveEmployeesAsync()
         {
             var employees = await _employeeRepository.GetAllActiveEmployeesAsync();
-            // Entity ni DTO ga konvertatsiya qilish
             var activeEmployees = new List<EmployeeDto>();
 
             activeEmployees = employees.Select(MapToDto).ToList();

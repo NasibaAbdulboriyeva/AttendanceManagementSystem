@@ -47,7 +47,7 @@ namespace AttendanceManagementSystem.Api.Controllers
             catch (Exception ex)
             {
                 model.Message = $"❌ Ошибка при синхронизации логов:{ex.Message}";
-                
+
             }
 
             return View(model);
@@ -56,7 +56,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         [HttpGet]
         public IActionResult EmployeeSync()
         {
-           
+
             return View(new SyncViewModel());
         }
 
@@ -64,23 +64,20 @@ namespace AttendanceManagementSystem.Api.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EmployeeSync(SyncViewModel model)
         {
-
             try
             {
-
                 var (cardsSynced, fingerprintsSynced) = await _employeeService.SyncEmployeeDataAsync();
-                // Natijani modelga yozamiz
                 model.SyncedCount = cardsSynced + fingerprintsSynced;
                 model.Message = $"✅ Сотрудники успешно синхронизированы! " +
                 $"Всего {model.SyncedCount} записей (Карты: {cardsSynced}, Отпечатки: {fingerprintsSynced}) обновлено/добавлено."; // RUSCHA
             }
             catch (Exception ex)
             {
-             
+
                 model.Message = $"❌ Ошибка при синхронизации сотрудников: {ex.Message}";
-             
-            }
-           
+
+            }
+
             return View(model);
         }
 
@@ -110,23 +107,22 @@ namespace AttendanceManagementSystem.Api.Controllers
             await _calculationService.ProcessAllEmployeesMonthlyAttendanceAsync(targetMonth);
             var emptyViewModel = new AttendanceCalendarViewModel
             {
-                TargetMonth = targetMonth, 
-               
+                TargetMonth = targetMonth,
+
             };
             return View("Calendar", emptyViewModel);
         }
 
 
         [HttpGet]
-        [HttpPost] // Oyni tanlash formasi POST so'rovi yuborishi uchun
-       public async Task<IActionResult> LateArrivalsSummary(DateTime? targetMonth)
+        [HttpPost]
+        public async Task<IActionResult> LateArrivalsSummary(DateTime? targetMonth)
         {
-            // Oyni aniqlash (Default: joriy oy)
+
             var month = targetMonth.HasValue
                 ? new DateTime(targetMonth.Value.Year, targetMonth.Value.Month, 1)
                 : new DateTime(DateTime.Now.Year, 11, 1);
 
-            // 1. Barcha xodimlar ro'yxatini yuklash va EmployeeSummary formatiga o'tkazish (Xatolik tuzatildi)
             var allEmployeesRaw = await _employeeService.GetAllActiveEmployeesAsync();
 
             var employeesSummary = allEmployeesRaw
@@ -134,42 +130,30 @@ namespace AttendanceManagementSystem.Api.Controllers
                 {
                     EmployeeId = e.EmployeeId,
                     FullName = e.UserName,
-                    TotalLateMinutes = 0 // Boshlang'ich qiymat
+                    TotalLateMinutes = 0
                 })
                 .ToList();
 
-            // 2. Barcha xodimlar uchun kech qolish minutlarini hisoblash
-            // YANGI YONDASHUV: Endi servis metodi butun employeesSummary ro'yxatini qabul qiladi
-            // va har bir xodim uchun TotalLateMinutes ni to'g'ridan-to'g'ri yangilaydi.
-            // (Agar servis metodi Dictionary qaytarsa, 3-qadam ishlaydi)
-
-            // Servis metodini Dictionary qaytarish mantig'ini saqlab qolgan holda chaqiramiz:
             var lateSummaryDictionary = await _calculationService.GetEmployeesLateSummaryAsync(month);
 
-            // 3. Xodimlar ro'yxatini kech qolish minutlari bilan birlashtirish (Dictionary yordamida)
             foreach (var employee in employeesSummary)
             {
                 if (lateSummaryDictionary.TryGetValue(employee.EmployeeId, out int totalMinutes))
                 {
-                    // Agar kech qolish minutlari topilsa, EmployeeSummary obyektiga yuklash
                     employee.TotalLateMinutes = totalMinutes;
 
                 }
 
             }
 
-            // 4. ViewModel yaratish va natijani View'ga yuborish
             var model = new AttendanceSummaryViewModel
             {
-                // To'g'rilangan ro'yxatni uzatish
                 Employees = employeesSummary,
                 TargetMonth = month
             };
 
             return View(model);
         }
-
-        // Eslatma: Eski GetLateMinutesForAllEmployees metodini olib tashlang!
 
 
         [HttpGet]
@@ -183,13 +167,13 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             var targetMonth = new DateTime(
                 year == 0 ? DateTime.Now.Year : year,
-                month == 0 ? 11: month, 1);
-            
-            var employeeId = await _employeeService.GetEmployeeIdByUsernameAsync(username);
-            var employee =await _employeeService.GetEmployeeByIdAsync(employeeId);
+                month == 0 ? 11 : month, 1);
 
- 
-            var logs=await _calculationService.GetMonthlyAttendanceCalendarsAsync(employeeId, targetMonth);
+            var employeeId = await _employeeService.GetEmployeeIdByUsernameAsync(username);
+            var employee = await _employeeService.GetEmployeeByIdAsync(employeeId);
+
+
+            var logs = await _calculationService.GetMonthlyAttendanceCalendarsAsync(employeeId, targetMonth);
 
             var viewModel = new AttendanceCalendarViewModel
             {
@@ -217,12 +201,10 @@ namespace AttendanceManagementSystem.Api.Controllers
             var allEmployeesDto = await _employeeService.GetAllActiveEmployeesAsync();
             var viewModel = new EmployeeScheduleViewModel();
 
-            // 1. SuccessMessage ni tekshirish va uni ViewModelga yuklash
             if (TempData["SuccessMessage"] is string successMessage)
             {
                 viewModel.Message = successMessage;
             }
-            // 2. ErrorMessage ni tekshirish va uni ViewModelga yuklash
             else if (TempData["ErrorMessage"] is string errorMessage)
             {
                 viewModel.Message = errorMessage;
@@ -230,21 +212,18 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             foreach (var employeeDto in allEmployeesDto.OrderBy(e => e.UserName))
             {
-                // ... (xodimlar grafigini yuklash logikasi o'zgarmaydi) ...
 
                 var scheduleDto = await _employeeService.GetEmployeeScheduleByEmployeeIdAsync(employeeDto.EmployeeId);
 
                 var item = new ScheduleListItem
                 {
                     FullName = employeeDto.UserName,
-                    // Xodim IDsini saqlashni unutmang, bu POST so'rovi uchun zarur!
-                    // Agar DTO'da EmployeeId bo'lsa, uni ScheduleListItem'ga ham qo'shish kerak.
-                    // Hozircha FullName orqali olishni taxmin qilamiz, ammo bu samarali emas.
+
                 };
 
                 if (scheduleDto != null)
                 {
-                    item.EmployeeScheduleId = scheduleDto.EmployeeScheduleId; // IDni saqlash juda muhim
+                    item.EmployeeScheduleId = scheduleDto.EmployeeScheduleId;
                     item.StartTime = scheduleDto.StartTime;
                     item.EndTime = scheduleDto.EndTime;
                     item.LimitInMinutes = scheduleDto.LimitInMinutes;
@@ -258,24 +237,86 @@ namespace AttendanceManagementSystem.Api.Controllers
         }
 
         [HttpPost]
-      
+
         public async Task<IActionResult> UpdateEntryTime([FromBody] UpdateEntryTimeDto dto)
         {
-           
-            await _calculationService.UpdateEntryTimeManuallyAsync(dto);
 
-            return Ok(new { success = true });
+            var newLateMinutes = await _calculationService.UpdateEntryTimeManuallyAsync(dto);
+
+            return Ok(new
+            {
+                success = true,
+                lateMinutes = newLateMinutes // 👈 YANGI MINUT QO'SHILDI
+            });
         }
 
         [HttpPost]
-        
+
         public async Task<IActionResult> UpdateJustificationStatus([FromBody] UpdateJustificationDto dto)
         {
-            
-            await _calculationService.UpdateJustificationStatusAsync(dto);
+            var newLateMinutes = await _calculationService.UpdateJustificationStatusAsync(dto);
 
-            return Ok(new { success = true });
+            return Ok(new
+            {
+                success = true,
+                lateMinutes = newLateMinutes,
+            });
         }
+        [HttpPost]
+        public async Task<IActionResult> UpdateWorkingDayStatus([FromBody] WorkingDayStatusUpdateDto dto)
+        {
+            var newLateMinutes = await _calculationService.UpdateWorkingDayStatusAsync(dto);
+
+            return Ok(new
+            {
+                success = true,
+                lateMinutes = newLateMinutes,
+            });
+        }
+        [HttpPost("UpdateDescription")]
+        public async Task<IActionResult> UpdateDescription([FromBody] DescriptionUpdateDto dto)
+        {
+            // Boshlang'ich tekshiruv
+            if (dto == null || dto.EmployeeId <= 0 || dto.EntryDay == default)
+            {
+                return BadRequest(new { isSuccess = false, message = "Noto'g'ri so'rov ma'lumotlari (Xodim ID va Sana zarur)." });
+            }
+
+            try
+            {
+                // Metod nomi Service'dagi yangi nomga mos kelishi kerak.
+                var updatedDescription = await _calculationService.UpdateDescriptionAsync(dto);
+
+                if (updatedDescription != null)
+                {
+                    // Muvaffaqiyatli javob: yangilangan matnni mijozga qaytarish
+                    return Ok(new
+                    {
+                        isSuccess = true,
+                        message = "Izoh muvaffaqiyatli yangilandi.",
+                        newDescription = updatedDescription
+                    });
+                }
+                else
+                {
+                    // Log topilmaganda
+                    return NotFound(new
+                    {
+                        isSuccess = false,
+                        message = $"Xodim ID: {dto.EmployeeId} uchun {dto.EntryDay.ToShortDateString()} sanasiga mos yozuv topilmadi."
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                // Server xatosi
+                return StatusCode(500, new
+                {
+                    isSuccess = false,
+                    message = $"Serverda ichki xato: {ex.Message}"
+                });
+            }
+        } 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScheduleSetup(EmployeeScheduleViewModel model)
@@ -292,15 +333,12 @@ namespace AttendanceManagementSystem.Api.Controllers
             {
                 foreach (var item in model.Schedules)
                 {
-                    // Eslatma: GetEmployeeIdByUsernameAsync har bir iteratsiyada chaqirilmasligi uchun 
-                    // ma'lumotlar to'g'ri bog'langanligiga ishonch hosil qilish kerak.
-                    // Hozirgi kodda bu amal saqlanib qoladi.
+                   
                     var emploeeId = await _employeeService.GetEmployeeIdByUsernameAsync(item.FullName);
 
                     var scheduleDto = new EmployeeScheduleDto
                     {
-                        // EmployeeId ni to'g'ridan-to'g'ri Model.Schedules[@i].EmployeeId dan olish yaxshiroq, 
-                        // ammo hozircha sizning FullName orqali olish kodingiz saqlanadi.
+                       
                         EmployeeId = emploeeId,
                         StartTime = item.StartTime,
                         EndTime = item.EndTime,
@@ -308,10 +346,7 @@ namespace AttendanceManagementSystem.Api.Controllers
                         EmployementType = item.EmployementType
                     };
 
-                    // EmployeeScheduleId ni ham DTOga o'tkazish kerak, agar yangilanish bo'lsa.
-                    // Agar sizning UpdateEmployeeScheduleAsync metodi faqat EmployeeId bo'yicha yangilasa, 
-                    // bu yerda EmployeeScheduleId kerak bo'lmasligi mumkin.
-                    // Agar ID kerak bo'lsa, uni DTOga qo'shing. (Asl kodda bu yo'q edi, shuning uchun qo'shmadim.)
+                 
                     var schedule = await _employeeService.GetEmployeeScheduleByEmployeeIdAsync(emploeeId);
                     if (schedule.EmployeeScheduleId== 0)
                     {
@@ -319,29 +354,20 @@ namespace AttendanceManagementSystem.Api.Controllers
                     }
                     else
                     {
-                        // Agar sizning DTO'ngiz EmployeeScheduleId ni talab qilsa:
-                        // scheduleDto.EmployeeScheduleId = item.EmployeeScheduleId;
+                        
                         await _employeeService.UpdateEmployeeScheduleAsync(scheduleDto);
                     }
 
                     updatedCount++;
                 }
 
-                // Muvaffaqiyat xabarini TempData orqali saqlaymiz, chunki biz Redirect qilmoqdamiz.
                 TempData["SuccessMessage"] = $"✅ Все {updatedCount} расписаний успешно сохранены или обновлены!";
 
-                // ******************************************************************
-                // 🔥 Asosiy o'zgarish: GET metodiga yo'naltirish
-                // ******************************************************************
                 return RedirectToAction(nameof(ScheduleSetup));
             }
             catch (Exception ex)
             {
-                // Xato xabarini TempData orqali saqlaymiz
                 TempData["ErrorMessage"] = $"❌ Произошла ошибка при сохранении: {ex.Message}";
-
-                // Xato bo'lsa ham GET metodiga yo'naltirish, lekin ba'zida POST so'rovda qolish maqbulroq.
-                // Hozircha GET ga yo'naltiramiz.
                 return RedirectToAction(nameof(ScheduleSetup));
             }
         }

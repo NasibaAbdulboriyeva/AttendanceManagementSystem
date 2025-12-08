@@ -1,4 +1,5 @@
 ﻿using AttendanceManagementSystem.Application.DTOs;
+using AttendanceManagementSystem.Domain.Entities;
 
 namespace AttendanceManagementSystem.Application.Services
 {
@@ -10,8 +11,10 @@ namespace AttendanceManagementSystem.Application.Services
         Task ProcessAllEmployeesMonthlyAttendanceAsync(DateTime month);
         int CalculateLateMinutes(CurrentAttendanceCalendar calendarDto, DateTime targetDate);
         Task<Dictionary<long, int>> GetEmployeesLateSummaryAsync(DateTime month);
-        Task UpdateEntryTimeManuallyAsync(UpdateEntryTimeDto dto);
-        Task UpdateJustificationStatusAsync(UpdateJustificationDto dto);
+        Task<int> UpdateEntryTimeManuallyAsync(UpdateEntryTimeDto dto);
+        Task<int> UpdateJustificationStatusAsync(UpdateJustificationDto dto);
+        Task<int> UpdateWorkingDayStatusAsync(WorkingDayStatusUpdateDto dto);
+        Task<string?> UpdateDescriptionAsync(DescriptionUpdateDto dto);
 
     }
 }
