@@ -12,8 +12,8 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         {
             _context = context;
         }
-       
-        public async Task<ICollection<CurrentAttendanceLog>>CreateLogAsync(ICollection<CurrentAttendanceLog> logs)
+
+        public async Task<ICollection<CurrentAttendanceLog>> CreateLogAsync(ICollection<CurrentAttendanceLog> logs)
         {
             if (logs == null || !logs.Any())
             {
@@ -24,6 +24,34 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
 
             return logs;
+        }
+
+        public async Task<ICollection<CurrentAttendanceLog>> GetLogsWithoutEntryTimeAsync(long employeeId, DateOnly month)
+        {
+            var logs = await _context.CurrentAttendanceLogs
+                .Where(l => l.EmployeeId == employeeId &&
+                            l.EntryDay.Year == month.Year &&
+                            l.EntryDay.Month == month.Month &&
+                            l.FirstEntryTime == default) // Faqat FirstEntryTime null bo'lganlar
+                .ToListAsync();
+
+            return logs;
+        }
+        public async Task UpdateRangeAsync(IEnumerable<CurrentAttendanceLog> logs)
+        {
+            if (logs == null || !logs.Any())
+            {
+                // Agar ro'yxat bo'sh bo'lsa, bazaga keraksiz so'rov yubormaymiz
+                return;
+            }
+
+            // 1. EF Core ga barcha obyektlardagi o'zgarishlarni belgilash
+            // UpdateRange sinxron metod bo'lib, ob'ektlarni "Modified" holatiga o'tkazadi.
+            _context.CurrentAttendanceLogs.UpdateRange(logs);
+
+            // 2. O'zgarishlarni bazaga saqlash
+            // SaveChangesAsync bitta tranzaktsiyada barcha belgilangan o'zgarishlarni UPDATE so'rovlari orqali yuboradi.
+            await _context.SaveChangesAsync();
         }
         public async Task DeleteMonthlyLogsAsync(long employeeId, DateTime month)
         {
@@ -111,6 +139,8 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
 
             return totalUnjustifiedLateMinutes;
         }
+
+      
         public Task<int> SaveChangesAsync()
         {
             return _context.SaveChangesAsync();

@@ -15,7 +15,7 @@
     </div>
     <div class="card-body">
 
-        @* Oyni tanlash qismi: Faqat inline uslublar qoldi *@
+        @* Oyni tanlash qismi *@
         <form method="post" asp-action="@actionName" asp-controller="@controllerName" style="display: flex; align-items: center; margin-bottom: 1rem;">
             <label for="month-picker" style="margin-right: 0.5rem; margin-bottom: 0; font-weight: bold;">Выберите месяц для отчета:</label>
             <input type="month"
@@ -32,6 +32,10 @@
                     <tr style="background-color: #f8f9fa;">
                         <th style="border: 1px solid #dee2e6; padding: 8px;">ФИО Сотрудника</th>
                         <th style="width: 150px; text-align: center; border: 1px solid #dee2e6; padding: 8px;">Общее опоздание (мин)</th>
+
+                       
+                        <th style="width: 150px; text-align: center; border: 1px solid #dee2e6; padding: 8px; color: firebrick;">Сверхлимит опоздания (мин)</th>
+
                     </tr>
                 </thead>
                 <tbody>
@@ -40,6 +44,9 @@
                         var lateMinutes = employee.TotalLateMinutes;
                         const int monthlyLimit = 80;
                         var isOverLimit = lateMinutes > monthlyLimit;
+
+                        // ✅ Limitdan oshgan minutlarni hisoblash
+                        var sverhLimitMinutes = isOverLimit ? (lateMinutes - monthlyLimit) : 0;
 
                         // Limitdan oshgan holat uchun INLINE STYLE yaratish
                         string styleForLateMinutes = "";
@@ -75,6 +82,20 @@
                                     <span style="color: green;">0</span>
                                 }
                             </td>
+
+                            <td style="text-align: center; border: 1px solid #dee2e6; padding: 8px;">
+                                @if (sverhLimitMinutes > 0)
+                                {
+                                // Faqat limitdan oshgan minutlar uchun QIZIL rang
+                                    <span style="color: red; font-weight: bold;">@sverhLimitMinutes</span>
+                                }
+                                else
+                                {
+                                    // Limitdan oshmagan yoki umuman kechikish bo'lmaganda 0
+                                    <span>0</span>
+                                }
+                            </td>
+
                         </tr>
                     }
                 </tbody>

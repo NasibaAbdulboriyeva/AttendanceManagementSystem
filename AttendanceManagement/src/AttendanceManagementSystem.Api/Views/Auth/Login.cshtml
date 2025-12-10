@@ -1,0 +1,57 @@
+﻿@model AttendanceManagementSystem.Application.DTOs.Auth.UserLoginDto
+
+@{
+    ViewData["Title"] = "Tizimga Kirish";
+    // Bu yerda sizning asosiy layout faylingiz chaqiriladi, masalan, _Layout.cshtml
+    Layout = "_Layout";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-lg" style="margin-top: 50px;">
+            <div class="card-header text-center bg-primary text-white">
+                <h3 class="mb-0">Tizimga Kirish</h3>
+            </div>
+            <div class="card-body">
+
+                @* Umumiy Model Xatoliklarini Ko'rsatish *@
+                <div asp-validation-summary="All" class="alert alert-danger" role="alert" style="font-size: 0.9em;"></div>
+
+                <form asp-controller="Auth" asp-action="Login" method="post">
+
+                    @* Return URL (agar mavjud bo'lsa) yashirincha qo'shiladi *@
+                    @if (ViewData["ReturnUrl"] != null)
+                    {
+                        <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                    }
+
+                    <div class="form-group mb-3">
+                        <label asp-for="UserName" class="form-label">Foydalanuvchi nomi</label>
+                        <input asp-for="UserName" class="form-control" placeholder="Foydalanuvchi nomini kiriting" />
+                        <span asp-validation-for="UserName" class="text-danger" style="font-size: 0.85em;"></span>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label asp-for="Password" class="form-label">Parol</label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Parolni kiriting" />
+                        <span asp-validation-for="Password" class="text-danger" style="font-size: 0.85em;"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Kirish</button>
+
+                    <hr />
+                    <p class="text-center">
+                        Yangi foydalanuvchimisiz? <a asp-controller="Auth" asp-action="SignUp">Ro'yxatdan o'tish</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        // Unobtrusive validation (validatsiya skriptlari)
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

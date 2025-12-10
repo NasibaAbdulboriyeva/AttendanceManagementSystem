@@ -1,4 +1,5 @@
 ﻿using AttendanceManagementSystem.Domain.Entities;
+using DocumentFormat.OpenXml.InkML;
 namespace AttendanceManagementSystem.Application.Abstractions
 {
     public interface IAttendanceLogRepository
@@ -8,5 +9,8 @@ namespace AttendanceManagementSystem.Application.Abstractions
         Task<ICollection<AttendanceLog>> GetLogsForAllEmployeesByDayAsync(DateTime targetDate);
         Task<ICollection<AttendanceLog>> GetLogsForEmployeeAndPeriodAsync( long employeeId, DateTime startDate,DateTime endDate);
         Task<DateTime?> GetLastRecordedTimeAsync();
-    }
+        Task<Dictionary<DateOnly, TimeOnly>> GetMonthlyFirstEntryTimesAsync(long employeeId, DateOnly month);
+        
+
+}
 }

@@ -5,23 +5,38 @@
         <h3 class="card-title">Список сотрудников</h3>
 
         @{
-            // Massiv yaratish uchun joriy oy va yilni aniqlash
             var currentYear = DateTime.Now.Year;
             var currentMonth = 11;
         }
 
-        @* Yaxshi amaliyot: Qayta ishlanuvchi ma'lumotlar bilan ishlash uchun POST usulidan foydalanish *@
+        @* 1. 'Создать' tugmasi formasi (Yashil) *@
         <form asp-controller="AdminAttendance"
               asp-action="ViewCreateCalendarForAll"
+              asp-route-year="@currentYear"
+              asp-route-month="@currentMonth"
+              method="get"
+              style="float: right; margin-left: 10px;">
+
+            <button type="submit"
+                    onclick="return confirm('ВНИМАНИЕ! Вы уверены, что хотите сгенерировать календарь для ВСЕХ активных сотрудников на текущий месяц? Все предыдущие расчеты будут перезаписаны.')"
+                    class="btn btn-success">
+                <i class="fas fa-calendar-plus"></i> Создать Календарь для ВСЕХ (@currentYear-@currentMonth)
+            </button>
+        </form>
+
+        @* 2. 'Обновить' tugmasi formasi (To'q Sariq/Oltin) *@
+        <form asp-controller="AdminAttendance"
+              asp-action="ViewUpdateCalendarForAll"
               asp-route-year="@currentYear"
               asp-route-month="@currentMonth"
               method="get"
               style="float: right;">
 
             <button type="submit"
-                    onclick="return confirm('ВНИМАНИЕ! Вы уверены, что хотите сгенерировать календарь для ВСЕХ активных сотрудников на текущий месяц? Все предыдущие расчеты будут перезаписаны.')"
-                    class="btn btn-success">
-                <i class="fas fa-calendar-plus"></i> Создать Календарь для ВСЕХ (@currentYear-@currentMonth)
+                    onclick="return confirm('ВНИМАНИЕ! Вы уверены, что хотите обновить календарь для ВСЕХ активных сотрудников на текущий месяц? Будут обновлены только поля с данными о посещаемости (время первого входа).')"
+                    class="btn btn-warning">
+                @* **O'zgartirish: btn-warning (To'q Sariq/Oltin rang) qo'yildi** *@
+                <i class="fas fa-calendar-alt"></i> Обновить Календарь для ВСЕХ (@currentYear-@currentMonth)
             </button>
         </form>
 
@@ -32,8 +47,8 @@
     <thead>
         <tr>
             <th>ФИО Сотрудника</th>
-            <th style="width: 150px;">Просмотр табеля</th> 
-            <th style="width: 120px;">Управление</th> @* Yangi ustun *@
+            <th style="width: 150px;">Просмотр табеля</th>
+            <th style="width: 120px;">Управление</th>
         </tr>
     </thead>
     <tbody>
@@ -42,10 +57,8 @@
             <tr>
                 <td>@employee.FullName</td>
 
-                @* 1. Kalendarni ko'rish tugmasi *@
                 <td>
                     @{
-                        // tekushiy data parametrlari
                         var currentYearForLink = DateTime.Now.Year;
                         var currentMonthForLink = 11;
                     }
@@ -60,10 +73,8 @@
                     </a>
                 </td>
 
-                @* 2. Deaktivatsiya tugmasi *@
                 <td>
                     @{
-                        // Confirm matni
                         var confirmMessage = $"ВНИМАНИЕ! Вы действительно хотите деактивировать сотрудника {employee.FullName}? Он будет удален из списка.";
                     }
 

@@ -15,6 +15,8 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence
         public DbSet<CurrentAttendanceLog> CurrentAttendanceLogs { get; set; }
         public DbSet<AttendanceLog> AttendanceLogs { get; set; }
         public DbSet<DoorActivityLog> DoorActivityLogs { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

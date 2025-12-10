@@ -1,0 +1,88 @@
+﻿@model AttendanceManagementSystem.Application.DTOs.Auth.UserCreateDto
+
+@{
+    ViewData["Title"] = "Ro'yxatdan O'tish";
+    Layout = "_Layout";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card shadow-lg" style="margin-top: 40px;">
+            <div class="card-header text-center bg-success text-white">
+                <h3 class="mb-0">Yangi Ro'yxatdan O'tish</h3>
+            </div>
+            <div class="card-body">
+
+                @* Umumiy Model Xatoliklarini Ko'rsatish *@
+                <div asp-validation-summary="All" class="alert alert-danger" role="alert" style="font-size: 0.9em;"></div>
+
+                @* Muvaffaqiyat xabari *@
+                @if (TempData["Message"] != null)
+                {
+                    <div class="alert alert-success">@TempData["Message"]</div>
+                }
+
+                <form asp-controller="Auth" asp-action="SignUp" method="post">
+
+                    <div class="row">
+                        @* Birinchi ism (First Name) *@
+                        <div class="form-group mb-3 col-md-6">
+                            <label asp-for="FirstName" class="form-label">Ism (FirstName)</label>
+                            <input asp-for="FirstName" class="form-control" placeholder="Ismingizni kiriting" />
+                            <span asp-validation-for="FirstName" class="text-danger" style="font-size: 0.85em;"></span>
+                        </div>
+
+                        @* Familiya (Last Name) *@
+                        <div class="form-group mb-3 col-md-6">
+                            <label asp-for="LastName" class="form-label">Familiya (LastName)</label>
+                            <input asp-for="LastName" class="form-control" placeholder="Familiyangizni kiriting" />
+                            <span asp-validation-for="LastName" class="text-danger" style="font-size: 0.85em;"></span>
+                        </div>
+                    </div>
+
+                    @* Foydalanuvchi nomi (UserName) *@
+                    <div class="form-group mb-3">
+                        <label asp-for="UserName" class="form-label">Foydalanuvchi nomi</label>
+                        <input asp-for="UserName" class="form-control" placeholder="Tizimga kirish uchun nomni kiriting" />
+                        <span asp-validation-for="UserName" class="text-danger" style="font-size: 0.85em;"></span>
+                    </div>
+
+                    @* Email *@
+                    <div class="form-group mb-3">
+                        <label asp-for="Email" class="form-label">Email</label>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="Email manzilingizni kiriting" />
+                        <span asp-validation-for="Email" class="text-danger" style="font-size: 0.85em;"></span>
+                    </div>
+
+                    @* Telefon raqami (Phone Number) *@
+                    <div class="form-group mb-3">
+                        <label asp-for="PhoneNumber" class="form-label">Telefon raqami</label>
+                        <input asp-for="PhoneNumber" type="tel" class="form-control" placeholder="Telefon raqamingizni kiriting" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger" style="font-size: 0.85em;"></span>
+                    </div>
+
+                    @* Parol (Password) *@
+                    <div class="form-group mb-3">
+                        <label asp-for="Password" class="form-label">Parol</label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Xavfsiz parolni kiriting" />
+                        <span asp-validation-for="Password" class="text-danger" style="font-size: 0.85em;"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 mt-3">Ro'yxatdan O'tish</button>
+
+                    <hr class="mt-4" />
+                    <p class="text-center">
+                        Allaqachon hisobingiz bormi? <a asp-controller="Auth" asp-action="Login">Tizimga Kirish</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        // Unobtrusive validation (Validatsiya skriptlari)
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

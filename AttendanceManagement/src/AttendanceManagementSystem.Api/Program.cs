@@ -30,7 +30,7 @@ namespace AttendanceManagementSystem.Api
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=AdminAttendance}/{action=Dashboard}/{id?}");
+                pattern: "{controller=Auth}/{action=Login}/{id?}");
 
             app.Run();
         }

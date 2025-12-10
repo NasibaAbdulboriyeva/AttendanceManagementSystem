@@ -115,6 +115,29 @@ namespace AttendanceManagementSystem.Api.Controllers
 
 
         [HttpGet]
+        public async Task<IActionResult> ViewUpdateCalendarForAll(int year, int month)
+        {
+            
+            var targetMonth = new DateOnly(
+                year == 0 ? DateTime.Now.Year : year, 
+                month == 0 ? 11 : month,             
+                1                                   
+            );
+
+            await _calculationService.ProcessUpdateForAllEmployeesMonthlyAttendanceAsync(targetMonth);
+
+            var emptyViewModel = new AttendanceCalendarViewModel
+            {
+                
+                TargetMonth = targetMonth.ToDateTime(TimeOnly.MinValue),
+
+            };
+
+
+            return View("Calendar", emptyViewModel);
+        }
+
+        [HttpGet]
         [HttpPost]
         public async Task<IActionResult> LateArrivalsSummary(DateTime? targetMonth)
         {
