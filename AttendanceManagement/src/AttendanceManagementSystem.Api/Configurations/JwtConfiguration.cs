@@ -1,4 +1,8 @@
-﻿namespace AttendanceManagementSystem.Api.Configurations
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+namespace AttendanceManagementSystem.Api.Configurations
 {
     public static class JwtConfiguration
     {

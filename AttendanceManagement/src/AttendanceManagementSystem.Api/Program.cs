@@ -10,8 +10,20 @@ namespace AttendanceManagementSystem.Api
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
-            builder.ConfigureDB();  
-            builder.ConfigureDI();  
+            builder.ConfigureDB();
+            builder.ConfigureDI();
+            builder.ConfigureJwtAuth();
+
+
+            builder.Services.AddAuthentication("Cookies")
+    .AddCookie("Cookies", options =>
+    {
+        options.LoginPath = "/Auth/Login";
+        options.LogoutPath = "/Auth/Logout";
+        options.AccessDeniedPath = "/Auth/AccessDenied";
+    });
+
+            builder.Services.AddAuthorization();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -25,7 +37,7 @@ namespace AttendanceManagementSystem.Api
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllerRoute(

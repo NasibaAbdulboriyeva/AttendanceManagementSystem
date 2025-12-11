@@ -184,7 +184,7 @@ namespace AttendanceManagementSystem.Application.Services
         public static UserDto ToUserDto(User user)
         {
             // Haqiqiy Konvertatsiya mantig'i shu yerda bo'ladi
-            return new UserDto { UserId = user.UserId, UserName = user.UserName };
+            return new UserDto { UserId = user.UserId, UserName = user.UserName , FirstName = user.FirstName, LastName = user.LastName, PhoneNumber = user.PhoneNumber, Email = user.Email };
         }
 
         // UserCreateDto -> User (Entity)

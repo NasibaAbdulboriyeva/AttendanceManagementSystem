@@ -24,7 +24,7 @@ namespace AttendanceManagementSystem.Api.Controllers
             public IActionResult Login(string? returnUrl = null)
             {
                 // Agar foydalanuvchi allaqachon kirgan bo'lsa, uni bosh sahifaga yo'naltirish
-                if (User.Identity!.IsAuthenticated)
+                if (User.Identity != null && User.Identity.IsAuthenticated)
                 {
                     return RedirectToAction("Dashboard", "AdminAttendance");
                 }
@@ -113,7 +113,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         [HttpGet]
         public IActionResult SignUp()
         {
-            if (User.Identity!.IsAuthenticated)
+            if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 return RedirectToAction("Dashboard", "AdminAttendance");
             }
