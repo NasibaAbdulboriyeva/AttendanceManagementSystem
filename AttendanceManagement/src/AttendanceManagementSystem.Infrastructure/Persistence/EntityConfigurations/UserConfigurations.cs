@@ -31,6 +31,9 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
             builder.Property(u => u.Salt).IsRequired().HasMaxLength(36);
 
             builder.Property(u => u.Password).IsRequired().HasMaxLength(128);
+            builder.Property(u => u.Role)
+                   .IsRequired()
+                   .HasConversion<string>();
 
             builder.HasMany(u => u.RefreshTokens)
                 .WithOne(rt => rt.User)

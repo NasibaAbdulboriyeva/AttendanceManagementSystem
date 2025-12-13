@@ -3,45 +3,53 @@ using AttendanceManagementSystem.Application.DTOs.Auth;
 using AttendanceManagementSystem.Application.Services.Security;
 using AttendanceManagementSystem.Domain.Entities;
 using FluentValidation;
-using System.Security.Claims;
-
+using System.Security.Claims;// ValidationException uchun
 
 namespace AttendanceManagementSystem.Application.Services
 {
-    
-    
+
+    // Eslatma: API uchun yozilgan ITokenService va IRefreshTokenRepository
+    // bu yerda ishlatilmagani uchun ularni o'chirish yoki shunchaki qoldirish mumkin.
+    // Men ularni Dependency Injection konstruktorida qoldirdim, ammo metodlarda ishlatmadim.
+
     public class AuthService : IAuthService
     {
-        private readonly IRefreshTokenRepository RefreshTokenRepository;
         private readonly IUserRepository UserRepository;
-        private readonly ITokenService TokenService;
         private readonly IValidator<UserCreateDto> UserValidator;
         private readonly IValidator<UserLoginDto> UserLoginValidator;
 
-        public AuthService(IRefreshTokenRepository refreshTokenRepository, IUserRepository userRepository, ITokenService tokenService, IValidator<UserCreateDto> userValidator, IValidator<UserLoginDto> userLoginValidator)
+        // JWT bilan bog'liq servislarni olib tashladim, yoki agar mavjud bo'lsa, ulardan foydalanishni to'xtatdim.
+        public AuthService(
+            IUserRepository userRepository,
+            IValidator<UserCreateDto> userValidator,
+            IValidator<UserLoginDto> userLoginValidator)
         {
-            RefreshTokenRepository = refreshTokenRepository;
             UserRepository = userRepository;
-            TokenService = tokenService;
             UserValidator = userValidator;
             UserLoginValidator = userLoginValidator;
         }
 
-        // 1. LOGIN MANTIQI
-        public async Task<LoginResponseDto> LoginUserAsync(UserLoginDto userLoginDto)
+        // --- 1. LOGIN MANTIQI (MVC uchun moslashtirildi) ---
+        // Endi LoginResponseDto o'rniga Claims ro'yxatini qaytaradi.
+        public async Task<List<Claim>?> LoginUserAsync(UserLoginDto userLoginDto)
         {
             var validationResult = await UserLoginValidator.ValidateAsync(userLoginDto);
+
             if (!validationResult.IsValid)
+
             {
+
                 throw new ValidationException(validationResult.Errors);
+
             }
 
             var user = await UserRepository.SelectUserByUserNameAsync(userLoginDto.UserName);
 
-            // Foydalanuvchi topilmaganini tekshirish muhim
             if (user == null)
             {
-                throw new Exception("UserName or password incorrect"); // Xavfsizlik uchun bir xil xato xabari
+                // Xavfsizlik uchun umumiy xato xabarini qaytaramiz (null)
+                // Controller bu null holatini xato deb qabul qiladi.
+                return null;
             }
 
             // Parolni tekshirish
@@ -49,89 +57,43 @@ namespace AttendanceManagementSystem.Application.Services
 
             if (checkUserPassword == false)
             {
-                throw new Exception("UserName or password incorrect");
+                return null; // Parol noto'g'ri bo'lsa
             }
 
-            // ✅ MapUser o'rniga Convert.ToUserDto ishlatildi
-            var userGetDto = Convert.ToUserDto(user);
-
-            var accessToken = TokenService.GenerateToken(userGetDto);
-
-            var refreshToken = CreateRefreshToken(Guid.NewGuid().ToString(), user.UserId);
-
-            await RefreshTokenRepository.InsertRefreshTokenAsync(refreshToken);
-
-            var loginResponseDto = new LoginResponseDto()
+            // --- Muvaffaqiyatli kirish: Claims yaratish ---
+            // TokenService o'rniga, to'g'ridan-to'g'ri Claimslarni qaytaramiz
+            var claims = new List<Claim>
             {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken.Token,
-                TokenType = "Bearer",
-                Expires = 25,
+                // Barcha muhim ma'lumotlar ClaimTypes orqali o'tkaziladi
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.GivenName, user.FirstName), // Shaxsiy ism
+                // new Claim(ClaimTypes.Role, user.Role), // Agar foydalanuvchida Rol bo'lsa
             };
 
-            return loginResponseDto;
+            return claims;
         }
 
-        // 2. TOKENNI YANGILASH MANTIQI
-        public async Task<LoginResponseDto> RefreshTokenAsync(RefreshRequestDto request)
-        {
-            ClaimsPrincipal? principal = TokenService.GetPrincipalFromExpiredToken(request.AccessToken);
-            if (principal == null) throw new Exception("Invalid access token.");
-
-            var userClaim = principal.FindFirst(c => c.Type == "UserId");
-
-            // Claim mavjudligini tekshirish muhim
-            if (userClaim == null) throw new Exception("Missing User ID claim in access token.");
-
-            var userId = long.Parse(userClaim.Value);
-
-            // Refresh tokenni topish
-            var refreshToken = await RefreshTokenRepository.SelectRefreshTokenAsync(request.RefreshToken, userId);
-
-            // Tokenning haqiqiyligini tekshirish
-            if (refreshToken == null || refreshToken.Expires < DateTime.UtcNow || refreshToken.IsRevoked)
-                throw new Exception("Invalid or expired refresh token.");
-
-            // Eski refresh tokenni bekor qilish (Revoke)
-            refreshToken.IsRevoked = true;
-            await RefreshTokenRepository.UpdateRefreshTokenAsync(refreshToken); // ✅ Update metodida yangi expirationDate berilmasligi kerak, chunki Revoke bo'lmoqda. Repository da IsRevoked yangilansa yetarli.
-
-            var user = await UserRepository.SelectUserByIdAsync(userId);
-            if (user == null) throw new Exception("User not found for refresh operation.");
-
-            // ✅ MapUser o'rniga Convert.ToUserDto ishlatildi
-            var userGetDto = Convert.ToUserDto(user);
-
-            var newAccessToken = TokenService.GenerateToken(userGetDto);
-
-            // TokenService'dan foydalanish o'rniga statik metodga o'zgartirildi, chunki eski kodingiz shunday edi
-            var newRefreshToken = CreateRefreshToken(Guid.NewGuid().ToString(), user.UserId); // TokenService.GenerateRefreshToken() o'rniga statik metodga o'zgartirildi
-
-            // Yangi refresh tokenni DB ga kiritish
-            await RefreshTokenRepository.InsertRefreshTokenAsync(newRefreshToken);
-
-            return new LoginResponseDto
-            {
-                AccessToken = newAccessToken,
-                RefreshToken = newRefreshToken.Token,
-                TokenType = "Bearer",
-                Expires = 25,
-            };
-        }
-
-        // 3. RO'YXATDAN O'TISH MANTIQI
-        // Qaytarish turi LoginResponseDto ga o'zgartirildi
-        public async Task<LoginResponseDto> SignUpUserAsync(UserCreateDto userCreateDto)
+        // --- 2. RO'YXATDAN O'TISH MANTIQI (Token yaratish olib tashlandi) ---
+        // Endi faqat UserDto ni qaytaradi (yoki faqat boolean)
+        public async Task<UserDto> SignUpUserAsync(UserCreateDto userCreateDto)
         {
             var validationResult = await UserValidator.ValidateAsync(userCreateDto);
             if (!validationResult.IsValid)
             {
-                throw new ValidationException(validationResult.Errors);
+                throw new ValidationException("Ro'yxatdan o'tish ma'lumotlari xato.", validationResult.Errors);
+            }
+
+            // Duplikat UserName ni tekshirish
+            var existingUser = await UserRepository.SelectUserByUserNameAsync(userCreateDto.UserName);
+            if (existingUser != null)
+            {
+                // Buni Repository qatlami bajarishi kerak, lekin xizmatda tekshirish ham yaxshi.
+                throw new Exception("Foydalanuvchi nomi band qilingan.");
             }
 
             var tupleFromHasher = PasswordHasher.Hasher(userCreateDto.Password);
 
-            // ✅ MapUser o'rniga Convert.ToUser ishlatildi
             var user = Convert.ToUser(userCreateDto, tupleFromHasher.Hash, tupleFromHasher.Salt);
 
             // Foydalanuvchini bazaga kiritish
@@ -139,60 +101,36 @@ namespace AttendanceManagementSystem.Application.Services
 
             var userEntityWithId = await UserRepository.SelectUserByIdAsync(userId);
 
-            var refreshToken = CreateRefreshToken(Guid.NewGuid().ToString(), userId);
-
-            await RefreshTokenRepository.InsertRefreshTokenAsync(refreshToken);
-
-            // Access Token yaratish
-            var accessToken = TokenService.GenerateToken(Convert.ToUserDto(userEntityWithId));
-
-            // ✅ Ro'yxatdan o'tgandan keyin tokenlarni qaytarish
-            return new LoginResponseDto
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken.Token,
-                TokenType = "Bearer",
-                Expires = 25,
-            };
+            // Controllerga muvaffaqiyatli yaratilgan UserDto ni qaytarish
+            return Convert.ToUserDto(userEntityWithId);
         }
 
-        // 4. LOGOUT MANTIQI
-        public async Task LogOutAsync(string token)
-        {
-            await RefreshTokenRepository.RemoveRefreshTokenAsync(token);
-        }
 
-        // 5. Yordamchi metod (Tuzatilgan)
-        private static RefreshToken CreateRefreshToken(string token, long userId)
-        {
-            return new RefreshToken
-            {
-                Token = token,
-                // ✅ Expir o'rniga ExpirationDate ishlatildi, Repository'ga moslashish uchun
-                Expires = DateTime.UtcNow.AddDays(21),
-                IsRevoked = false,
-                UserId = userId
-            };
-        }
 
-      
+        /*
+        // --- API Token mantig'i MVC uchun olib tashlandi/keraksiz ---
+
+        // public Task<LoginResponseDto> RefreshTokenAsync(RefreshRequestDto request) { ... }
+        // public Task LogOutAsync(string token) { ... }
+        // private static RefreshToken CreateRefreshToken(string token, long userId) { ... }
+
+        */
+
     }
 
+    // Convert klasini o'zgarishsiz qoldiramiz (Entity mapping uchun kerak)
     public static class Convert
     {
         // User (Entity) -> UserGetDto
         public static UserDto ToUserDto(User user)
         {
-            // Haqiqiy Konvertatsiya mantig'i shu yerda bo'ladi
-            return new UserDto { UserId = user.UserId, UserName = user.UserName , FirstName = user.FirstName, LastName = user.LastName, PhoneNumber = user.PhoneNumber, Email = user.Email };
+            return new UserDto { UserId = user.UserId, UserName = user.UserName, FirstName = user.FirstName, LastName = user.LastName, PhoneNumber = user.PhoneNumber, Email = user.Email };
         }
 
         // UserCreateDto -> User (Entity)
         public static User ToUser(UserCreateDto dto, string passwordHash, string salt)
         {
-            // Haqiqiy Konvertatsiya mantig'i shu yerda bo'ladi
-            return new User { UserName = dto.UserName, Password = passwordHash, Salt = salt, FirstName=dto.FirstName,LastName=dto.LastName,PhoneNumber=dto.PhoneNumber,Email=dto.Email};
-
+            return new User { UserName = dto.UserName, Password = passwordHash, Salt = salt, FirstName = dto.FirstName, LastName = dto.LastName, PhoneNumber = dto.PhoneNumber, Email = dto.Email };
         }
     }
 }

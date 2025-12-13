@@ -3,176 +3,148 @@ using AttendanceManagementSystem.Application.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace AttendanceManagementSystem.Api.Controllers
 {
-        // MVC Controller'lar uchun to'g'ri nomlash konvensiyasi
-        public class AuthController : Controller
+    public class AuthController : Controller
+    {
+        private readonly IAuthService _authService;
+
+        public AuthController(IAuthService authService)
         {
-            private readonly IAuthService _authService;
+            _authService = authService;
+        }
 
-            public AuthController(IAuthService authService)
-            {
-                _authService = authService;
-            }
-
-            // --- 1. LOGIN (GET) ---
-            // Tizimga kirish formasini ko'rsatadi
-            [HttpGet]
-            public IActionResult Login(string? returnUrl = null)
-            {
-                // Agar foydalanuvchi allaqachon kirgan bo'lsa, uni bosh sahifaga yo'naltirish
-                if (User.Identity != null && User.Identity.IsAuthenticated)
-                {
-                    return RedirectToAction("Dashboard", "AdminAttendance");
-                }
-                ViewData["ReturnUrl"] = returnUrl;
-                return View(new UserLoginDto());
-            }
-
-            // --- 2. LOGIN (POST) ---
-            // Login ma'lumotlarini qabul qilib, foydalanuvchini kirgizadi
-            [HttpPost]
-            [ValidateAntiForgeryToken]
-            public async Task<IActionResult> Login(UserLoginDto model, string? returnUrl = null)
-            {
-                ViewData["ReturnUrl"] = returnUrl;
-
-                if (!ModelState.IsValid)
-                {
-                    return View(model);
-                }
-
-                // --- AuthService'dan Login Mantig'ini Ishlatish ---
-                try
-                {
-                    // Sizning AuthService.LoginUserAsync metodi AccessToken, RefreshToken qaytaradi (API uchun).
-                    // Biz hozir bu metodning faqat birinchi qismini, ya'ni foydalanuvchi mavjudligi
-                    // va parolni to'g'ri tekshirish qismini ishlatishimiz kerak.
-
-                    var loginResponse = await _authService.LoginUserAsync(model);
-
-                    // Muvaffaqiyatli kirish bo'lsa, JWT yaratilgan bo'ladi.
-                    // Biz JWT yaratilishidan keyin, foydalanuvchini MVC Cookie orqali avtorizatsiya qilamiz.
-
-                    if (loginResponse != null)
-                    {
-                        // Foydalanuvchi ma'lumotlaridan Claims yaratish
-                        var claims = new List<Claim>
-                    {
-                        // Bu ma'lumotlar Cookie ichida saqlanadi
-                        new Claim(ClaimTypes.NameIdentifier, model.UserName),
-                        new Claim(ClaimTypes.Name, model.UserName),
-                        // Agar rol ma'lumotlari bo'lsa, bu yerga qo'shiladi:
-                        // new Claim(ClaimTypes.Role, "Admin"), 
-                    };
-
-                        var claimsIdentity = new ClaimsIdentity(
-                            claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-                        var authProperties = new AuthenticationProperties
-                        {
-                            IsPersistent = true,
-                            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7) // Cookie amal qilish muddati
-                        };
-
-                        // Cookie ni yaratish va brauzerga yuborish
-                        await HttpContext.SignInAsync(
-                            CookieAuthenticationDefaults.AuthenticationScheme,
-                            new ClaimsPrincipal(claimsIdentity),
-                            authProperties);
-
-                        // Oldingi sahifaga yoki Bosh sahifaga yo'naltirish
-                        if (Url.IsLocalUrl(returnUrl))
-                        {
-                            return Redirect(returnUrl);
-                        }
-                        return RedirectToAction("Dashboard", "AdminAttendance");
-                    }
-
-                    // Agar LoginUserAsync exception tashlamasa, lekin null qaytarsa (yoki login xato bo'lsa)
-                    ModelState.AddModelError(string.Empty, "Foydalanuvchi nomi yoki parol noto'g'ri.");
-                    return View(model);
-                }
-                catch (ValidationException)
-                {
-                    // AuthService ichidagi validatsiya xatolarini ushlab olish (agar model validatsiya qilinmasa)
-                    ModelState.AddModelError(string.Empty, "Kirish ma'lumotlari formatida xato.");
-                    return View(model);
-                }
-                catch (Exception)
-                {
-                    // Boshqa barcha xatolar
-                    ModelState.AddModelError(string.Empty, "Tizimga kirishda xato yuz berdi.");
-                    return View(model);
-                }
-            }
-
+        // ---------------- LOGIN (GET) ----------------
         [HttpGet]
-        public IActionResult SignUp()
+        public IActionResult Login(string? returnUrl = null)
         {
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
+
                 return RedirectToAction("Dashboard", "AdminAttendance");
+
             }
-            // UserCreateDto modeli View'ga yuboriladi
+
+            ViewData["ReturnUrl"] = returnUrl;
+            return View(new UserLoginDto());
+        }
+
+        // ... (yuqoridagi kodlar)
+
+        // ---------------- LOGIN (POST) ----------------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(UserLoginDto model, string? returnUrl = null)
+        {
+            ViewData["ReturnUrl"] = returnUrl;
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            try
+            {
+                // --- ASOSIY O'ZGARTIRISH: Service endi to'g'ridan-to'g'ri Claims ni qaytaradi ---
+                var claims = await _authService.LoginUserAsync(model);
+
+                if (claims == null || !claims.Any()) // claims null bo'lishi mumkin (login/parol xato bo'lsa)
+                {
+                    ModelState.AddModelError(string.Empty, "Login yoki parol noto‘g‘ri.");
+                    return View(model);
+                }
+
+                // Claims listi Service qatlamidan kelganligi uchun, bu yerda Claimslarni 
+                // qayta yaratish shart emas, balki ularni to'g'ridan-to'g'ri ishlatish kerak:
+                var identity = new ClaimsIdentity(
+                    claims, // Service dan kelgan claims ishlatildi
+                    CookieAuthenticationDefaults.AuthenticationScheme
+                );
+
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+                };
+
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(identity),
+                    authProperties
+                );
+
+                if (Url.IsLocalUrl(returnUrl))
+                    return Redirect(returnUrl);
+
+                return RedirectByRole();
+            }
+           
+            catch (Exception)
+            {
+                ModelState.AddModelError(string.Empty, "Tizimga kirishda kutilmagan xato yuz berdi.");
+                return View(model);
+            }
+        }
+        // ... (qolgan kodlar o'zgarishsiz)
+        // ---------------- SIGNUP (GET) ----------------
+        [HttpGet]
+        public IActionResult SignUp()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectByRole();
+
             return View(new UserCreateDto());
         }
 
-        // ---------------------------------------------
-        // --- 4. SIGNUP (POST) ---
-        // Ro'yxatdan o'tish ma'lumotlarini qabul qilish
-        // ---------------------------------------------
+        // ---------------- SIGNUP (POST) ----------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SignUp(UserCreateDto model)
         {
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
             try
             {
-                // AuthService orqali foydalanuvchini yaratish va unga token olish
-                // Sizning SignUpUserAsync metodi LoginResponseDto qaytaradi (avtomatik kirish/tokenlash)
-                var response = await _authService.SignUpUserAsync(model);
+                await _authService.SignUpUserAsync(model);
 
-                // Ro'yxatdan o'tish muvaffaqiyatli bo'lsa, foydalanuvchini Login sahifasiga yuborish
-                // Yoki agar SignUpUserAsync muvaffaqiyatli kirishni ham amalga oshirsa, Dashboardga yuborish
-
-                // Eng yaxshi usul: Ro'yxatdan o'tgandan keyin Login sahifasiga yo'naltirish
-                TempData["SuccessMessage"] = "Ro'yxatdan muvaffaqiyatli o'tdingiz. Iltimos, hisobingizga kiring.";
-                return RedirectToAction("Login");
-
-                /*
-                // Agar ro'yxatdan o'tgandan so'ng avtomatik kirishni istasangiz:
-                // Yuqoridagi LOGIN (POST) mantig'ini shu yerda takrorlash kerak edi. 
-                // Ammo Login sahifasiga yo'naltirish tozaroq yechim hisoblanadi.
-                */
+                TempData["SuccessMessage"] = "Ro‘yxatdan muvaffaqiyatli o‘tdingiz. Iltimos, hisobingizga kiring.";
+                return RedirectToAction(nameof(Login));
             }
-           
+            
             catch (Exception ex)
             {
-                // Boshqa xatolar (masalan, UserName band bo'lsa)
+                // Service qatlamida UserName allaqachon mavjudligi kabi xatolarni ushlash
                 ModelState.AddModelError(string.Empty, $"Ro'yxatdan o'tishda xato: {ex.Message}");
                 return View(model);
             }
         }
-        // --- 3. LOGOUT (GET/POST) ---
-        // Foydalanuvchini tizimdan chiqaradi
-        [HttpGet]
-            [HttpPost]
-            public async Task<IActionResult> Logout()
+
+        // ---------------- LOGOUT ----------------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
+        {
+            // Cookie ni o'chirish
+            await HttpContext.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme
+            );
+
+            return RedirectToAction(nameof(Login));
+        }
+
+        // ---------------- HELPERS ----------------
+        private IActionResult RedirectByRole()
+        {
+            // Foydalanuvchi ma'lumotlaridagi 'Role' claimiga asoslanadi.
+            if (User.IsInRole("Admin"))
             {
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                return RedirectToAction("Dashboard", "AdminAttendance");
 
-                // JWT Refresh Tokendan ham xalos bo'lish kerak, agar kerak bo'lsa:
-                // await _authService.LogOutAsync("Joriy_Refresh_Token_Bu_Yerdan_Olinadi"); 
-
-                return RedirectToAction("Login", "Auth");
             }
+
+            // Agar u Employee yoki boshqa bo'lsa, yoki Role aniqlanmagan bo'lsa, 'Home' ga yo'naltirish
+            return RedirectToAction("Dashboard", "AdminAttendance");
         }
     }
+}

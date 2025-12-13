@@ -1,47 +1,111 @@
 ﻿@model AttendanceManagementSystem.Application.DTOs.Auth.UserLoginDto
 
 @{
-    ViewData["Title"] = "Tizimga Kirish";
-    // Bu yerda sizning asosiy layout faylingiz chaqiriladi, masalan, _Layout.cshtml
-    Layout = "_Layout";
+    ViewData["Title"] = "Вход в Систему";
+    Layout = "_Layout"; // Убедитесь, что ваш основной Layout файл подключен
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow-lg" style="margin-top: 50px;">
-            <div class="card-header text-center bg-primary text-white">
-                <h3 class="mb-0">Tizimga Kirish</h3>
-            </div>
-            <div class="card-body">
+<style>
+    /* Кастомные стили для современного дизайна */
+    body {
+        /* Легкий градиент на фоне для эстетики */
+        background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+    }
 
-                @* Umumiy Model Xatoliklarini Ko'rsatish *@
-                <div asp-validation-summary="All" class="alert alert-danger" role="alert" style="font-size: 0.9em;"></div>
+    .login-card {
+        margin-top: 10vh; /* Отступ сверху для центрирования */
+        border-radius: 1rem; /* Скругление углов */
+        border: none;
+        overflow: hidden; /* Обрезка для тени и скругления */
+        transition: transform 0.3s ease-in-out;
+    }
+
+        .login-card:hover {
+            transform: translateY(-5px); /* Небольшой эффект при наведении */
+        }
+
+    .card-header-custom {
+        background-color: #3f51b5; /* Глубокий синий (Material Design Primary) */
+        color: white;
+        padding: 2rem 0;
+        border-radius: 1rem 1rem 0 0;
+        letter-spacing: 1px;
+    }
+
+    .form-control {
+        border-radius: 0.5rem;
+        border: 1px solid #ced4da;
+        padding: 0.75rem 1rem;
+    }
+
+    .btn-primary-custom {
+        background-color: #3f51b5;
+        border-color: #3f51b5;
+        border-radius: 0.5rem;
+        padding: 0.75rem 0;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-primary-custom:hover {
+            background-color: #303f9f;
+            border-color: #303f9f;
+        }
+
+    .alert-danger {
+        font-size: 0.9em;
+        padding: 0.75rem;
+        margin-bottom: 1.5rem;
+        border-radius: 0.5rem;
+    }
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-lg-4 col-md-6">
+        <div class="card login-card shadow-xl">
+            <div class="card-header-custom text-center">
+                <h3 class="mb-0">Вход в Систему</h3>
+                <small>Управление Посещаемостью</small>
+            </div>
+            <div class="card-body p-4 p-md-5">
+
+                @* Общие ошибки модели *@
+                <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+                @* Сообщение об успешной регистрации *@
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <strong>Успех!</strong> @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+                    </div>
+                }
 
                 <form asp-controller="Auth" asp-action="Login" method="post">
 
-                    @* Return URL (agar mavjud bo'lsa) yashirincha qo'shiladi *@
+                    @* Скрытое поле для Return URL *@
                     @if (ViewData["ReturnUrl"] != null)
                     {
                         <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
                     }
 
-                    <div class="form-group mb-3">
-                        <label asp-for="UserName" class="form-label">Foydalanuvchi nomi</label>
-                        <input asp-for="UserName" class="form-control" placeholder="Foydalanuvchi nomini kiriting" />
+                    <div class="form-group mb-4">
+                        <label asp-for="UserName" class="form-label">Имя Пользователя</label>
+                        <input asp-for="UserName" class="form-control" placeholder="Введите имя пользователя" />
                         <span asp-validation-for="UserName" class="text-danger" style="font-size: 0.85em;"></span>
                     </div>
 
                     <div class="form-group mb-4">
-                        <label asp-for="Password" class="form-label">Parol</label>
-                        <input asp-for="Password" type="password" class="form-control" placeholder="Parolni kiriting" />
+                        <label asp-for="Password" class="form-label">Пароль</label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Введите пароль" />
                         <span asp-validation-for="Password" class="text-danger" style="font-size: 0.85em;"></span>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100">Kirish</button>
+                    <button type="submit" class="btn btn-primary-custom w-100">Войти</button>
 
-                    <hr />
-                    <p class="text-center">
-                        Yangi foydalanuvchimisiz? <a asp-controller="Auth" asp-action="SignUp">Ro'yxatdan o'tish</a>
+                    <hr class="mt-4 mb-3" />
+                    <p class="text-center text-muted">
+                        Еще не зарегистрированы? <a asp-controller="Auth" asp-action="SignUp" class="text-decoration-none" style="color: #3f51b5; font-weight: 500;">Регистрация</a>
                     </p>
                 </form>
             </div>
@@ -51,7 +115,7 @@
 
 @section Scripts {
     @{
-        // Unobtrusive validation (validatsiya skriptlari)
+        // Unobtrusive validation (скрипты валидации)
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }

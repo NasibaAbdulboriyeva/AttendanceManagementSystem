@@ -192,6 +192,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
                         EmployeeId = employeeId,
                         EntryDay = log.EntryDay, // Sanani DateTime formatida (agar DTO talab qilsa)
                         IsWorkingDay = log.IsWorkingDay,
+                        IsJustified=log.IsJustified,
                         FirstEntryTime = newEntryTime,
                         ScheduledStartTime = schedule.StartTime
                     };

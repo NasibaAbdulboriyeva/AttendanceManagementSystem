@@ -12,7 +12,7 @@ namespace AttendanceManagementSystem.Api
             builder.Services.AddControllersWithViews();
             builder.ConfigureDB();
             builder.ConfigureDI();
-            builder.ConfigureJwtAuth();
+           
 
 
             builder.Services.AddAuthentication("Cookies")
@@ -42,7 +42,7 @@ namespace AttendanceManagementSystem.Api
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Auth}/{action=Login}/{id?}");
+                pattern: "{controller=Auth}/{action=SignUp}/{id?}");
 
             app.Run();
         }

@@ -96,6 +96,21 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View(viewModel);
         }
+        [HttpGet]
+        public async Task<IActionResult> Employees()
+        {
+            var allEmployees = await _employeeService.GetAllActiveEmployeesAsync();
+
+            var viewModel = new EmployeeListViewModel();
+
+            viewModel.Employees = allEmployees
+                .Select(e => new EmployeeListItem
+                {
+                    FullName = e.UserName,
+                }).ToList();
+
+            return View(viewModel);
+        }
 
         [HttpGet]
         public async Task<IActionResult> ViewCreateCalendarForAll(int year, int month)

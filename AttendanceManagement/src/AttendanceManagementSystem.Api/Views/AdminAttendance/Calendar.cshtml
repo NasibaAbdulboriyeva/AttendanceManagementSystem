@@ -119,7 +119,7 @@
                             </td>
 
                             <td class="text-center justify-status-cell">
-                                @if (dayLog.FirstEntryTime != default)
+                                @if (dayLog.IsWorkingDay)
                                 {
                                     <div class="d-flex align-items-center justify-content-center">
                                         <input type="checkbox"
@@ -160,6 +160,13 @@
     </div>
 </div>
 
+<div class="mt-4 d-flex justify-content-between">
+
+    @* ⭐ Yaxshilangan qaytish tugmasi ⭐ *@
+    <a asp-controller="AdminAttendance" asp-action="Dashboard" class="btn btn-secondary btn-lg shadow">
+        <i class="fas fa-arrow-left me-1"></i> Вернуться в панель управления
+    </a>
+</div>
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>

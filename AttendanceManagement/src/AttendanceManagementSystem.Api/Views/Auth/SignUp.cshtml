@@ -1,78 +1,133 @@
 ﻿@model AttendanceManagementSystem.Application.DTOs.Auth.UserCreateDto
 
 @{
-    ViewData["Title"] = "Ro'yxatdan O'tish";
+    ViewData["Title"] = "Регистрация Пользователя";
     Layout = "_Layout";
 }
 
+<style>
+    /* Кастомные стили, как и на странице входа, для единого дизайна */
+    body {
+        background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+    }
+
+    .signup-card {
+        margin-top: 5vh;
+        margin-bottom: 5vh; /* Отступ снизу, чтобы форма не прилипала к краю */
+        border-radius: 1rem;
+        border: none;
+        overflow: hidden;
+        transition: transform 0.3s ease-in-out;
+    }
+
+        .signup-card:hover {
+            transform: translateY(-5px);
+        }
+
+    .card-header-custom {
+        /* Использовать акцентный цвет (зеленый) для регистрации */
+        background-color: #4caf50;
+        color: white;
+        padding: 1.5rem 0;
+        border-radius: 1rem 1rem 0 0;
+        letter-spacing: 1px;
+    }
+
+    .form-control {
+        border-radius: 0.5rem;
+        border: 1px solid #ced4da;
+        padding: 0.75rem 1rem;
+    }
+
+    .btn-success-custom {
+        background-color: #4caf50;
+        border-color: #4caf50;
+        border-radius: 0.5rem;
+        padding: 0.75rem 0;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-success-custom:hover {
+            background-color: #388e3c;
+            border-color: #388e3c;
+        }
+
+    .alert-danger {
+        font-size: 0.9em;
+        padding: 0.75rem;
+        margin-bottom: 1.5rem;
+        border-radius: 0.5rem;
+    }
+</style>
+
 <div class="row justify-content-center">
-    <div class="col-md-7">
-        <div class="card shadow-lg" style="margin-top: 40px;">
-            <div class="card-header text-center bg-success text-white">
-                <h3 class="mb-0">Yangi Ro'yxatdan O'tish</h3>
+    <div class="col-lg-6 col-md-8">
+        <div class="card signup-card shadow-xl">
+            <div class="card-header-custom text-center">
+                <h3 class="mb-0">Создание нового аккаунта</h3>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4 p-md-5">
 
-                @* Umumiy Model Xatoliklarini Ko'rsatish *@
-                <div asp-validation-summary="All" class="alert alert-danger" role="alert" style="font-size: 0.9em;"></div>
-
-                @* Muvaffaqiyat xabari *@
-                @if (TempData["Message"] != null)
-                {
-                    <div class="alert alert-success">@TempData["Message"]</div>
-                }
+                @* Общие ошибки модели *@
+                <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
 
                 <form asp-controller="Auth" asp-action="SignUp" method="post">
 
+                    <h5 class="mb-4 text-secondary">Личная информация</h5>
                     <div class="row">
-                        @* Birinchi ism (First Name) *@
-                        <div class="form-group mb-3 col-md-6">
-                            <label asp-for="FirstName" class="form-label">Ism (FirstName)</label>
-                            <input asp-for="FirstName" class="form-control" placeholder="Ismingizni kiriting" />
+                        @* Имя (First Name) *@
+                        <div class="form-group mb-4 col-md-6">
+                            <label asp-for="FirstName" class="form-label">Имя</label>
+                            <input asp-for="FirstName" class="form-control" placeholder="Введите ваше имя" />
                             <span asp-validation-for="FirstName" class="text-danger" style="font-size: 0.85em;"></span>
                         </div>
 
-                        @* Familiya (Last Name) *@
-                        <div class="form-group mb-3 col-md-6">
-                            <label asp-for="LastName" class="form-label">Familiya (LastName)</label>
-                            <input asp-for="LastName" class="form-control" placeholder="Familiyangizni kiriting" />
+                        @* Фамилия (Last Name) *@
+                        <div class="form-group mb-4 col-md-6">
+                            <label asp-for="LastName" class="form-label">Фамилия</label>
+                            <input asp-for="LastName" class="form-control" placeholder="Введите вашу фамилию" />
                             <span asp-validation-for="LastName" class="text-danger" style="font-size: 0.85em;"></span>
                         </div>
                     </div>
 
-                    @* Foydalanuvchi nomi (UserName) *@
-                    <div class="form-group mb-3">
-                        <label asp-for="UserName" class="form-label">Foydalanuvchi nomi</label>
-                        <input asp-for="UserName" class="form-control" placeholder="Tizimga kirish uchun nomni kiriting" />
-                        <span asp-validation-for="UserName" class="text-danger" style="font-size: 0.85em;"></span>
-                    </div>
+                    <h5 class="mb-4 text-secondary">Контактная информация</h5>
 
                     @* Email *@
-                    <div class="form-group mb-3">
-                        <label asp-for="Email" class="form-label">Email</label>
-                        <input asp-for="Email" type="email" class="form-control" placeholder="Email manzilingizni kiriting" />
+                    <div class="form-group mb-4">
+                        <label asp-for="Email" class="form-label">Электронная почта (Email)</label>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="example@domain.com" />
                         <span asp-validation-for="Email" class="text-danger" style="font-size: 0.85em;"></span>
                     </div>
 
-                    @* Telefon raqami (Phone Number) *@
-                    <div class="form-group mb-3">
-                        <label asp-for="PhoneNumber" class="form-label">Telefon raqami</label>
-                        <input asp-for="PhoneNumber" type="tel" class="form-control" placeholder="Telefon raqamingizni kiriting" />
+                    @* Телефон рақами (Phone Number) *@
+                    <div class="form-group mb-4">
+                        <label asp-for="PhoneNumber" class="form-label">Номер телефона</label>
+                        <input asp-for="PhoneNumber" type="tel" class="form-control" placeholder="+998 XX YYY YY YY" />
                         <span asp-validation-for="PhoneNumber" class="text-danger" style="font-size: 0.85em;"></span>
                     </div>
 
-                    @* Parol (Password) *@
-                    <div class="form-group mb-3">
-                        <label asp-for="Password" class="form-label">Parol</label>
-                        <input asp-for="Password" type="password" class="form-control" placeholder="Xavfsiz parolni kiriting" />
+                    <h5 class="mb-4 text-secondary">Данные для входа</h5>
+
+                    @* Имя Пользователя (UserName) *@
+                    <div class="form-group mb-4">
+                        <label asp-for="UserName" class="form-label">Имя Пользователя</label>
+                        <input asp-for="UserName" class="form-control" placeholder="Уникальное имя для входа" />
+                        <span asp-validation-for="UserName" class="text-danger" style="font-size: 0.85em;"></span>
+                    </div>
+
+                    @* Пароль (Password) *@
+                    <div class="form-group mb-5">
+                        <label asp-for="Password" class="form-label">Пароль</label>
+                        <input asp-for="Password" type="password" class="form-control" placeholder="Введите надежный пароль" />
                         <span asp-validation-for="Password" class="text-danger" style="font-size: 0.85em;"></span>
                     </div>
 
-                    <button type="submit" class="btn btn-success w-100 mt-3">Ro'yxatdan O'tish</button>
+                    <button type="submit" class="btn btn-success-custom w-100">Зарегистрироваться</button>
 
-                    <hr class="mt-4" />
-                    <p class="text-center">
-                        Allaqachon hisobingiz bormi? <a asp-controller="Auth" asp-action="Login">Tizimga Kirish</a>
+                    <hr class="mt-4 mb-3" />
+                    <p class="text-center text-muted">
+                        Уже есть аккаунт? <a asp-controller="Auth" asp-action="Login" class="text-decoration-none" style="color: #4caf50; font-weight: 500;">Войти</a>
                     </p>
                 </form>
             </div>
@@ -82,7 +137,7 @@
 
 @section Scripts {
     @{
-        // Unobtrusive validation (Validatsiya skriptlari)
+        // Скрипты для Unobtrusive Validation
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }
