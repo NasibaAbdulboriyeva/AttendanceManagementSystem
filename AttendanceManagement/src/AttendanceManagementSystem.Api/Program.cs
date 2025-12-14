@@ -1,10 +1,11 @@
 using AttendanceManagementSystem.Api.Configurations;
+using AttendanceManagementSystem.Application.Abstractions;
 
 namespace AttendanceManagementSystem.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -12,20 +13,44 @@ namespace AttendanceManagementSystem.Api
             builder.Services.AddControllersWithViews();
             builder.ConfigureDB();
             builder.ConfigureDI();
-           
+
+
 
 
             builder.Services.AddAuthentication("Cookies")
-    .AddCookie("Cookies", options =>
-    {
-        options.LoginPath = "/Auth/Login";
-        options.LogoutPath = "/Auth/Logout";
-        options.AccessDeniedPath = "/Auth/AccessDenied";
-    });
+          .AddCookie("Cookies", options =>
+           {
+               options.LoginPath = "/Auth/Login";
+               options.LogoutPath = "/Auth/Logout";
+               options.AccessDeniedPath = "/Auth/AccessDenied";
+           });
 
             builder.Services.AddAuthorization();
             var app = builder.Build();
 
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    // 1. Token Service'ni DI orqali olamiz
+                    // (Sizda TTLockService ITTLockTokenService ni implementatsiya qiladi deb faraz qilamiz)
+                    var tokenService = services.GetRequiredService<ITTLockService>();
+
+                    // 2. Tokenlarni konfiguratsiyadan bazaga saqlash metodini chaqiramiz
+                    await tokenService.InitializeTokensFromConfigAsync();
+
+                    // Ixtiyoriy: Agar DB migratsiyasi kerak bo'lsa, shu yerda chaqiriladi
+                    // var dbContext = services.GetRequiredService<ApplicationDbContext>();
+                    // await dbContext.Database.MigrateAsync();
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "Kritik xato: TTLock tokenlarini initsializatsiya qilishda muammo yuz berdi.");
+                    // Ilovani to'xtatish haqida qaror qabul qilishingiz mumkin
+                }
+            }
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {

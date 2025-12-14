@@ -16,7 +16,6 @@ namespace AttendanceManagementSystem.Api.Controllers
             _authService = authService;
         }
 
-        // ---------------- LOGIN (GET) ----------------
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -31,9 +30,6 @@ namespace AttendanceManagementSystem.Api.Controllers
             return View(new UserLoginDto());
         }
 
-        // ... (yuqoridagi kodlar)
-
-        // ---------------- LOGIN (POST) ----------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(UserLoginDto model, string? returnUrl = null)
@@ -50,7 +46,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
                 if (claims == null || !claims.Any()) // claims null bo'lishi mumkin (login/parol xato bo'lsa)
                 {
-                    ModelState.AddModelError(string.Empty, "Login yoki parol noto‘g‘ri.");
+                    ModelState.AddModelError(string.Empty, "Неверный логин или пароль.");
                     return View(model);
                 }
 
@@ -81,7 +77,7 @@ namespace AttendanceManagementSystem.Api.Controllers
            
             catch (Exception)
             {
-                ModelState.AddModelError(string.Empty, "Tizimga kirishda kutilmagan xato yuz berdi.");
+                ModelState.AddModelError(string.Empty, "Произошла ошибка при входе в систему.");
                 return View(model);
             }
         }
@@ -108,19 +104,18 @@ namespace AttendanceManagementSystem.Api.Controllers
             {
                 await _authService.SignUpUserAsync(model);
 
-                TempData["SuccessMessage"] = "Ro‘yxatdan muvaffaqiyatli o‘tdingiz. Iltimos, hisobingizga kiring.";
+                TempData["SuccessMessage"] = "Вы успешно зарегистрировались. Пожалуйста, войдите в свой аккаунт.";
                 return RedirectToAction(nameof(Login));
             }
             
             catch (Exception ex)
             {
                 // Service qatlamida UserName allaqachon mavjudligi kabi xatolarni ushlash
-                ModelState.AddModelError(string.Empty, $"Ro'yxatdan o'tishda xato: {ex.Message}");
+                ModelState.AddModelError(string.Empty, $"Ошибка при регистрации: {ex.Message}");
                 return View(model);
             }
         }
 
-        // ---------------- LOGOUT ----------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()

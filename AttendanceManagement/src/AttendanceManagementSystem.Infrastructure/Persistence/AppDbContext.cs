@@ -1,4 +1,5 @@
-﻿using AttendanceManagementSystem.Domain.Entities;
+﻿using AttendanceManagementSystem.Api.Configurations;
+using AttendanceManagementSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace AttendanceManagementSystem.Infrastructure.Persistence
@@ -16,6 +17,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence
         public DbSet<AttendanceLog> AttendanceLogs { get; set; }
         public DbSet<DoorActivityLog> DoorActivityLogs { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<TTLockSettings> TTlockSettings { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

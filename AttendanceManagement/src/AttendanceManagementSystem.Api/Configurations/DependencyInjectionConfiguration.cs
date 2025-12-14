@@ -17,6 +17,7 @@ namespace AttendanceManagementSystem.Api.Configurations
             builder.Services.AddScoped<IEmployeeService, EmployeeService>();
             builder.Services.AddScoped<IAttendanceLogRepository, AttendanceLogRepository>();
             builder.Services.AddScoped<IAttendanceLogService, AttendanceLogService>();
+            builder.Services.AddScoped<ITTlockTokenRepository, TTlockTokenRepository>();
             builder.Services.AddScoped<ICurrentAttendanceLogRepository, CurrentAttendanceLogRepository>();
             builder.Services.AddScoped<ICurrentAttendanceLogCalculationService, CurrentAttendanceLogCalculationService>();
 
