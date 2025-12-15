@@ -2,6 +2,7 @@
 using AttendanceManagementSystem.Application.DTOs;
 using AttendanceManagementSystem.Application.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AttendanceManagementSystem.Api.Controllers
 {
@@ -111,7 +112,6 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View(viewModel);
         }
-
         [HttpGet]
         public async Task<IActionResult> ViewCreateCalendarForAll(int year, int month)
         {
@@ -119,15 +119,58 @@ namespace AttendanceManagementSystem.Api.Controllers
                 year == 0 ? DateTime.Now.Year : year,
                 month == 0 ? 11 : month, 1);
 
-            await _calculationService.ProcessAllEmployeesMonthlyAttendanceAsync(targetMonth);
-            var emptyViewModel = new AttendanceCalendarViewModel
+            bool alreadyRunThisMonth = await _calculationService.HasMonthlyAttendanceLogs(targetMonth);
+
+            DateTime? lastRunDate = null;
+            bool processExecuted = false; 
+
+            if (!alreadyRunThisMonth)
+            {
+
+                try
+                {
+                    await _calculationService.ProcessAllEmployeesMonthlyAttendanceAsync(targetMonth);
+                    processExecuted = true;
+
+                 
+                    alreadyRunThisMonth = await _calculationService.HasMonthlyAttendanceLogs(targetMonth);
+
+                    if (alreadyRunThisMonth)
+                    {
+                        lastRunDate = DateTime.Now;
+                        TempData["SuccessMessage"] =
+                            $"✅ Календарь за {targetMonth:yyyy-MM} месяц успешно создан. " +
+                            $"Дата запуска: {lastRunDate.Value:yyyy-MM-dd HH:mm:ss}";
+                    }
+
+                    else
+                    {
+                        TempData["ErrorMessage"] = $"⚠️ Создание календаря за {targetMonth:yyyy-MM} месяц завершено, но записи (логи) не были найдены.";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = $"❌ При создании календаря за {targetMonth:yyyy-MM} месяц произошла серьезная ошибка: {ex.Message}";
+                    alreadyRunThisMonth = false;
+                }
+            }
+            else
+            {
+                string lastRunDisplay = lastRunDate.HasValue ? lastRunDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : "неизвестна";
+
+                TempData["ErrorMessage"] =
+                    $"❌ Операция для {targetMonth:yyyy-MM} месяца уже была выполнена. " +
+                    $"Последняя дата создания записи: {lastRunDisplay}";
+            }
+
+            var finalViewModel = new AttendanceCalendarViewModel
             {
                 TargetMonth = targetMonth,
-
+                IsCalendarAlreadyCreatedForTargetMonth = alreadyRunThisMonth,
             };
-            return View("Calendar", emptyViewModel);
-        }
 
+            return View("Calendar", finalViewModel);
+        }
 
         [HttpGet]
         public async Task<IActionResult> ViewUpdateCalendarForAll(int year, int month)
@@ -148,7 +191,6 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             };
 
-
             return View("Calendar", emptyViewModel);
         }
 
@@ -156,7 +198,6 @@ namespace AttendanceManagementSystem.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> LateArrivalsSummary(DateTime? targetMonth)
         {
-
             var month = targetMonth.HasValue
                 ? new DateTime(targetMonth.Value.Year, targetMonth.Value.Month, 1)
                 : new DateTime(DateTime.Now.Year, 11, 1);
@@ -181,7 +222,6 @@ namespace AttendanceManagementSystem.Api.Controllers
                     employee.TotalLateMinutes = totalMinutes;
 
                 }
-
             }
 
             var model = new AttendanceSummaryViewModel
@@ -192,7 +232,6 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View(model);
         }
-
 
         [HttpGet]
         public async Task<IActionResult> ViewCalendar(string username, int year, int month)
@@ -233,6 +272,7 @@ namespace AttendanceManagementSystem.Api.Controllers
             return RedirectToAction("EmployeeList");
 
         }
+
         [HttpGet]
         public async Task<IActionResult> ScheduleSetup()
         {
@@ -284,7 +324,7 @@ namespace AttendanceManagementSystem.Api.Controllers
             return Ok(new
             {
                 success = true,
-                lateMinutes = newLateMinutes // 👈 YANGI MINUT QO'SHILDI
+                lateMinutes = newLateMinutes 
             });
         }
 

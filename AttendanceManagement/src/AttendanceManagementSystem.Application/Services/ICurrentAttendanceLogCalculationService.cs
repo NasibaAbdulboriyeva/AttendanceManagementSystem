@@ -14,6 +14,7 @@ namespace AttendanceManagementSystem.Application.Services
         Task<Dictionary<long, int>> GetEmployeesLateSummaryAsync(DateTime month);
         Task UpdateMonthlyEntryTimesAsync(long employeeId, DateOnly month);
         Task<int> UpdateEntryTimeManuallyAsync(UpdateEntryTimeDto dto);
+        Task<bool> HasMonthlyAttendanceLogs(DateTime month);
         Task<int> UpdateJustificationStatusAsync(UpdateJustificationDto dto);
         Task<int> UpdateWorkingDayStatusAsync(WorkingDayStatusUpdateDto dto);
         Task<string?> UpdateDescriptionAsync(DescriptionUpdateDto dto);

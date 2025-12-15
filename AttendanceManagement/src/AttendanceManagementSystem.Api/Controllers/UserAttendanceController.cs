@@ -23,12 +23,10 @@ namespace AttendanceManagementSystem.Api.Controllers
             _userService = userService;
         }
 
-
         [HttpGet]
         public async Task<IActionResult> MyCalendar(int year, int month)
         {
-            // 1. Joriy foydalanuvchi ID'sini olish
-            // Eslatma: Haqiqiy ilovada bu Service orqali yoki User.Identity/Claims orqali olinadi.
+           
             var currentEmployeeId = await _userService.GetEmployeeIdFromCurrentUserAsync();
 
             if (currentEmployeeId <= 0)
@@ -49,20 +47,18 @@ namespace AttendanceManagementSystem.Api.Controllers
             var viewModel = new AttendanceCalendarViewModel
             {
                 TargetMonth = targetMonth,
-                EmployeeFullName = employee?.UserName ?? "Mening davomatim",
+                EmployeeFullName = employee?.UserName ?? "Моя посещаемость",
                 MonthlyLogs = logs,
-                // Foydalanuvchi o'zi uchun kiritishga ruxsat bermaslik uchun
+
             };
 
-            return View("Calendar", viewModel); // Adminning Calendar view'idan foydalanishi mumkin
+            return View("Calendar", viewModel); 
         }
-
-
 
         [HttpGet]
         public async Task<IActionResult> MyLateArrivalsSummary(DateTime? targetMonth)
         {
-            // 1. Joriy foydalanuvchi ID'sini olish
+            
             var currentEmployeeId = await _userService.GetEmployeeIdFromCurrentUserAsync();
 
             if (currentEmployeeId <= 0)
@@ -83,7 +79,6 @@ namespace AttendanceManagementSystem.Api.Controllers
             }
 
             var employeesSummary = new List<EmployeeSummary>();
-
             var employeeSummary = new EmployeeSummary
             {
                 EmployeeId = currentEmployeeRaw.EmployeeId,
@@ -101,21 +96,16 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             employeesSummary.Add(employeeSummary);
 
-
             var model = new AttendanceSummaryViewModel
             {
-                Employees = employeesSummary, // Faqat 1 ta xodim bo'ladi
+                Employees = employeesSummary, 
                 TargetMonth = month,
             };
 
-            return View("LateArrivalsSummary", model); // Adminning LateArrivalsSummary view'idan foydalanishi mumkin
+            return View("LateArrivalsSummary", model); 
         }
-
-        // 💡 Qolgan metodlar (masalan, ScheduleSetup, Sync) faqat Admin Controller'da qolishi kerak.
     }
-
-    // 💡 Eslatma: IUserService interfeysi va uning implementatsiyasini yaratishingiz kerak.
-    // Masalan:
+   
     public interface IUserService
     {
         Task<int> GetEmployeeIdFromCurrentUserAsync();

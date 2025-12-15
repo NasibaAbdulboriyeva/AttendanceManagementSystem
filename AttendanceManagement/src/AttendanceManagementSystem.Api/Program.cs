@@ -16,7 +16,6 @@ namespace AttendanceManagementSystem.Api
 
 
 
-
             builder.Services.AddAuthentication("Cookies")
           .AddCookie("Cookies", options =>
            {
@@ -33,29 +32,21 @@ namespace AttendanceManagementSystem.Api
                 var services = scope.ServiceProvider;
                 try
                 {
-                    // 1. Token Service'ni DI orqali olamiz
-                    // (Sizda TTLockService ITTLockTokenService ni implementatsiya qiladi deb faraz qilamiz)
                     var tokenService = services.GetRequiredService<ITTLockService>();
-
-                    // 2. Tokenlarni konfiguratsiyadan bazaga saqlash metodini chaqiramiz
                     await tokenService.InitializeTokensFromConfigAsync();
 
-                    // Ixtiyoriy: Agar DB migratsiyasi kerak bo'lsa, shu yerda chaqiriladi
-                    // var dbContext = services.GetRequiredService<ApplicationDbContext>();
-                    // await dbContext.Database.MigrateAsync();
+                   
                 }
                 catch (Exception ex)
                 {
                     var logger = services.GetRequiredService<ILogger<Program>>();
                     logger.LogError(ex, "Kritik xato: TTLock tokenlarini initsializatsiya qilishda muammo yuz berdi.");
-                    // Ilovani to'xtatish haqida qaror qabul qilishingiz mumkin
+                   
                 }
             }
-            // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 

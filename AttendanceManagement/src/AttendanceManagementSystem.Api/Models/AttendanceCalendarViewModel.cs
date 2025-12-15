@@ -9,5 +9,6 @@ namespace AttendanceManagementSystem.Api.Models
         public DateTime TargetMonth { get; set; }
         public int TotalUnjustifiedLate { get; set; }
         public ICollection<CurrentAttendanceCalendar> MonthlyLogs { get; set; } = new List<CurrentAttendanceCalendar>();
+        public bool IsCalendarAlreadyCreatedForTargetMonth { get; set; }
     }
 }

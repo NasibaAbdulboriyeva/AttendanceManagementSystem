@@ -41,19 +41,18 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             try
             {
-                // --- ASOSIY O'ZGARTIRISH: Service endi to'g'ridan-to'g'ri Claims ni qaytaradi ---
+                
                 var claims = await _authService.LoginUserAsync(model);
 
-                if (claims == null || !claims.Any()) // claims null bo'lishi mumkin (login/parol xato bo'lsa)
+                if (claims == null || !claims.Any()) 
                 {
                     ModelState.AddModelError(string.Empty, "Неверный логин или пароль.");
                     return View(model);
                 }
 
-                // Claims listi Service qatlamidan kelganligi uchun, bu yerda Claimslarni 
-                // qayta yaratish shart emas, balki ularni to'g'ridan-to'g'ri ishlatish kerak:
+                
                 var identity = new ClaimsIdentity(
-                    claims, // Service dan kelgan claims ishlatildi
+                    claims, 
                     CookieAuthenticationDefaults.AuthenticationScheme
                 );
 
@@ -128,17 +127,16 @@ namespace AttendanceManagementSystem.Api.Controllers
             return RedirectToAction(nameof(Login));
         }
 
-        // ---------------- HELPERS ----------------
         private IActionResult RedirectByRole()
         {
-            // Foydalanuvchi ma'lumotlaridagi 'Role' claimiga asoslanadi.
+       
             if (User.IsInRole("Admin"))
             {
                 return RedirectToAction("Dashboard", "AdminAttendance");
 
             }
 
-            // Agar u Employee yoki boshqa bo'lsa, yoki Role aniqlanmagan bo'lsa, 'Home' ga yo'naltirish
+           
             return RedirectToAction("Dashboard", "AdminAttendance");
         }
     }

@@ -3,14 +3,10 @@ using AttendanceManagementSystem.Application.DTOs.Auth;
 using AttendanceManagementSystem.Application.Services.Security;
 using AttendanceManagementSystem.Domain.Entities;
 using FluentValidation;
-using System.Security.Claims;// ValidationException uchun
+using System.Security.Claims;
 
 namespace AttendanceManagementSystem.Application.Services
 {
-
-    // Eslatma: API uchun yozilgan ITokenService va IRefreshTokenRepository
-    // bu yerda ishlatilmagani uchun ularni o'chirish yoki shunchaki qoldirish mumkin.
-    // Men ularni Dependency Injection konstruktorida qoldirdim, ammo metodlarda ishlatmadim.
 
     public class AuthService : IAuthService
     {
@@ -18,7 +14,6 @@ namespace AttendanceManagementSystem.Application.Services
         private readonly IValidator<UserCreateDto> UserValidator;
         private readonly IValidator<UserLoginDto> UserLoginValidator;
 
-        // JWT bilan bog'liq servislarni olib tashladim, yoki agar mavjud bo'lsa, ulardan foydalanishni to'xtatdim.
         public AuthService(
             IUserRepository userRepository,
             IValidator<UserCreateDto> userValidator,
@@ -47,8 +42,6 @@ namespace AttendanceManagementSystem.Application.Services
 
             if (user == null)
             {
-                // Xavfsizlik uchun umumiy xato xabarini qaytaramiz (null)
-                // Controller bu null holatini xato deb qabul qiladi.
                 return null;
             }
 
@@ -57,25 +50,21 @@ namespace AttendanceManagementSystem.Application.Services
 
             if (checkUserPassword == false)
             {
-                return null; // Parol noto'g'ri bo'lsa
+                return null; 
             }
 
-            // --- Muvaffaqiyatli kirish: Claims yaratish ---
-            // TokenService o'rniga, to'g'ridan-to'g'ri Claimslarni qaytaramiz
+           
             var claims = new List<Claim>
             {
-                // Barcha muhim ma'lumotlar ClaimTypes orqali o'tkaziladi
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.GivenName, user.FirstName), // Shaxsiy ism
-                // new Claim(ClaimTypes.Role, user.Role), // Agar foydalanuvchida Rol bo'lsa
+                 
             };
 
             return claims;
         }
 
-        // --- 2. RO'YXATDAN O'TISH MANTIQI (Token yaratish olib tashlandi) ---
-        // Endi faqat UserDto ni qaytaradi (yoki faqat boolean)
         public async Task<UserDto> SignUpUserAsync(UserCreateDto userCreateDto)
         {
             var validationResult = await UserValidator.ValidateAsync(userCreateDto);
@@ -104,30 +93,15 @@ namespace AttendanceManagementSystem.Application.Services
             // Controllerga muvaffaqiyatli yaratilgan UserDto ni qaytarish
             return Convert.ToUserDto(userEntityWithId);
         }
-
-
-
-        /*
-        // --- API Token mantig'i MVC uchun olib tashlandi/keraksiz ---
-
-        // public Task<LoginResponseDto> RefreshTokenAsync(RefreshRequestDto request) { ... }
-        // public Task LogOutAsync(string token) { ... }
-        // private static RefreshToken CreateRefreshToken(string token, long userId) { ... }
-
-        */
-
     }
 
-    // Convert klasini o'zgarishsiz qoldiramiz (Entity mapping uchun kerak)
     public static class Convert
     {
-        // User (Entity) -> UserGetDto
         public static UserDto ToUserDto(User user)
         {
             return new UserDto { UserId = user.UserId, UserName = user.UserName, FirstName = user.FirstName, LastName = user.LastName, PhoneNumber = user.PhoneNumber, Email = user.Email };
         }
 
-        // UserCreateDto -> User (Entity)
         public static User ToUser(UserCreateDto dto, string passwordHash, string salt)
         {
             return new User { UserName = dto.UserName, Password = passwordHash, Salt = salt, FirstName = dto.FirstName, LastName = dto.LastName, PhoneNumber = dto.PhoneNumber, Email = dto.Email };

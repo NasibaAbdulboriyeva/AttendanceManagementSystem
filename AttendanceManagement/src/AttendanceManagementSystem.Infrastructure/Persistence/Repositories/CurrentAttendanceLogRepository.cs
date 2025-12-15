@@ -37,6 +37,18 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
 
             return logs;
         }
+        public async Task<bool> HasMonthlyAttendanceLogs(DateTime month)
+        {
+            // Oyning boshlanishi va oxirini aniqlash
+            var startOfMonth = new DateTime(month.Year, month.Month, 1);
+            var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+
+            // CurrentAttendanceLog jadvalida shu oy ichida yaratilgan (CreatedAt) yozuv bormi?
+            // Agar bitta yozuv bo'lsa ham, TRUE qaytadi.
+            bool exists = await _context.CurrentAttendanceLogs // Sizning DbSet nomingizni ishlatdim
+                .AnyAsync(log => log.CreatedAt >= startOfMonth && log.CreatedAt <= endOfMonth);
+            return exists;
+        }
         public async Task UpdateRangeAsync(IEnumerable<CurrentAttendanceLog> logs)
         {
             if (logs == null || !logs.Any())

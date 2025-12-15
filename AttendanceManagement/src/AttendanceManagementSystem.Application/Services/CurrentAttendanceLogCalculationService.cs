@@ -21,6 +21,13 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
     {
         return await _currentAttendanceLogRepository.GetLateArrivalsForPeriodAsync(employeeId, month);
     }
+
+    public async Task<bool> HasMonthlyAttendanceLogs(DateTime month)
+    {
+        bool exists = await _currentAttendanceLogRepository.HasMonthlyAttendanceLogs(month);
+
+        return exists;
+    }
     public async Task<Dictionary<long, int>> GetEmployeesLateSummaryAsync(DateTime month)
     {
         var activeEmployeeIds = await _employeeRepository.GetAllActiveEmployeesAsync();
@@ -43,6 +50,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
 
             await GetAndSaveMonthlyAttendanceCalendarAsync(employee.EmployeeId, month);
         }
+       
     }
 
     public async Task ProcessUpdateForAllEmployeesMonthlyAttendanceAsync(DateOnly month)
