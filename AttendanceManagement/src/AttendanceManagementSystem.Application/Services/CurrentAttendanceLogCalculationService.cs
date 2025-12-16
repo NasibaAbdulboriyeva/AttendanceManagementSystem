@@ -41,6 +41,21 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         return lateSummary;
     }
 
+    public async Task<DateTime?> GetLastAttendanceLogDate(DateTime targetMonth)
+    {
+        try
+        {
+            // Mantiqni Repositpry'ga delegatsiya qilish
+            return await _currentAttendanceLogRepository.GetLastAttendanceLogDateAsync(targetMonth);
+        }
+        catch (Exception ex)
+        {
+            // Loglash mantiqi (Ixtiyoriy)
+            // _logger.LogError(ex, "Xato yuz berdi GetLastAttendanceLogDate.");
+            return null;
+        }
+    }
+
     public async Task ProcessAllEmployeesMonthlyAttendanceAsync(DateTime month)
     {
         var activeEmployeeIds = await _employeeRepository.GetAllActiveEmployeesAsync();

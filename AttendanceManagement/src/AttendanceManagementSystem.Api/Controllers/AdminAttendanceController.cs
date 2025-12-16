@@ -2,7 +2,6 @@
 using AttendanceManagementSystem.Application.DTOs;
 using AttendanceManagementSystem.Application.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace AttendanceManagementSystem.Api.Controllers
 {
@@ -17,7 +16,13 @@ namespace AttendanceManagementSystem.Api.Controllers
             _employeeService = employeeService;
             _calculationService = calculationService;
         }
-
+        [HttpGet]
+        public IActionResult Instructions()
+        {
+            // Agar statik matn bo'lsa, model kerak emas.
+            ViewData["Title"] = "Инструкция по Использованию Админ-Панели";
+            return View();
+        }
         [HttpGet]
         public IActionResult Dashboard()
         {
@@ -117,12 +122,13 @@ namespace AttendanceManagementSystem.Api.Controllers
         {
             var targetMonth = new DateTime(
                 year == 0 ? DateTime.Now.Year : year,
-                month == 0 ? 11 : month, 1);
+                month == 0 ? 12 : month, 1);
+
 
             bool alreadyRunThisMonth = await _calculationService.HasMonthlyAttendanceLogs(targetMonth);
 
             DateTime? lastRunDate = null;
-            bool processExecuted = false; 
+
 
             if (!alreadyRunThisMonth)
             {
@@ -130,63 +136,96 @@ namespace AttendanceManagementSystem.Api.Controllers
                 try
                 {
                     await _calculationService.ProcessAllEmployeesMonthlyAttendanceAsync(targetMonth);
-                    processExecuted = true;
 
-                 
                     alreadyRunThisMonth = await _calculationService.HasMonthlyAttendanceLogs(targetMonth);
 
                     if (alreadyRunThisMonth)
                     {
-                        lastRunDate = DateTime.Now;
+                        
                         TempData["SuccessMessage"] =
                             $"✅ Календарь за {targetMonth:yyyy-MM} месяц успешно создан. " +
                             $"Дата запуска: {lastRunDate.Value:yyyy-MM-dd HH:mm:ss}";
-                    }
+                 
 
+                        var finalViewModel = new AttendanceCalendarViewModel // Bu modelni View("Calendar") ishlatadi
+                        {
+                            TargetMonth = targetMonth,
+                            IsCalendarAlreadyCreatedForTargetMonth = alreadyRunThisMonth,
+
+                        };
+                    }
                     else
                     {
+                       
                         TempData["ErrorMessage"] = $"⚠️ Создание календаря за {targetMonth:yyyy-MM} месяц завершено, но записи (логи) не были найдены.";
                     }
                 }
                 catch (Exception ex)
                 {
+                    // Jiddiy xato yuz berdi
                     TempData["ErrorMessage"] = $"❌ При создании календаря за {targetMonth:yyyy-MM} месяц произошла серьезная ошибка: {ex.Message}";
-                    alreadyRunThisMonth = false;
                 }
             }
             else
             {
+
+                lastRunDate = await _calculationService.GetLastAttendanceLogDate(targetMonth); 
+
+
                 string lastRunDisplay = lastRunDate.HasValue ? lastRunDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : "неизвестна";
 
                 TempData["ErrorMessage"] =
                     $"❌ Операция для {targetMonth:yyyy-MM} месяца уже была выполнена. " +
                     $"Последняя дата создания записи: {lastRunDisplay}";
+
+                return RedirectToAction("CalendarCreatedConfirmation", new
+                {
+                    year = targetMonth.Year,
+                    month = targetMonth.Month,
+                    creationDateTicks = lastRunDate
+                });
             }
 
-            var finalViewModel = new AttendanceCalendarViewModel
+            return RedirectToAction("CalendarCreatedConfirmation", new
+            {
+                year = targetMonth.Year,
+                month = targetMonth.Month,
+                creationDateTicks = lastRunDate
+            });
+           
+        }
+
+
+        [HttpGet]
+        public IActionResult CalendarCreatedConfirmation(int year, int month, DateTime creationDateTicks)
+        {
+            var targetMonth = new DateTime(year, month, 1);
+            var creationDate = creationDateTicks;
+
+            var viewModel = new CreationResultViewModel
             {
                 TargetMonth = targetMonth,
-                IsCalendarAlreadyCreatedForTargetMonth = alreadyRunThisMonth,
+                CreationDate = creationDate
             };
 
-            return View("Calendar", finalViewModel);
+            return View(viewModel);
         }
 
         [HttpGet]
         public async Task<IActionResult> ViewUpdateCalendarForAll(int year, int month)
         {
-            
+
             var targetMonth = new DateOnly(
-                year == 0 ? DateTime.Now.Year : year, 
-                month == 0 ? 11 : month,             
-                1                                   
+                year == 0 ? DateTime.Now.Year : year,
+                month == 0 ? 11 : month,
+                1
             );
 
             await _calculationService.ProcessUpdateForAllEmployeesMonthlyAttendanceAsync(targetMonth);
 
             var emptyViewModel = new AttendanceCalendarViewModel
             {
-                
+
                 TargetMonth = targetMonth.ToDateTime(TimeOnly.MinValue),
 
             };
@@ -324,7 +363,7 @@ namespace AttendanceManagementSystem.Api.Controllers
             return Ok(new
             {
                 success = true,
-                lateMinutes = newLateMinutes 
+                lateMinutes = newLateMinutes
             });
         }
 
@@ -362,12 +401,12 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             try
             {
-                // Metod nomi Service'dagi yangi nomga mos kelishi kerak.
+
                 var updatedDescription = await _calculationService.UpdateDescriptionAsync(dto);
 
                 if (updatedDescription != null)
                 {
-                    // Muvaffaqiyatli javob: yangilangan matnni mijozga qaytarish
+
                     return Ok(new
                     {
                         isSuccess = true,
@@ -394,7 +433,7 @@ namespace AttendanceManagementSystem.Api.Controllers
                     message = $"Serverda ichki xato: {ex.Message}"
                 });
             }
-        } 
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ScheduleSetup(EmployeeScheduleViewModel model)
@@ -411,12 +450,12 @@ namespace AttendanceManagementSystem.Api.Controllers
             {
                 foreach (var item in model.Schedules)
                 {
-                   
+
                     var emploeeId = await _employeeService.GetEmployeeIdByUsernameAsync(item.FullName);
 
                     var scheduleDto = new EmployeeScheduleDto
                     {
-                       
+
                         EmployeeId = emploeeId,
                         StartTime = item.StartTime,
                         EndTime = item.EndTime,
@@ -424,15 +463,15 @@ namespace AttendanceManagementSystem.Api.Controllers
                         EmployementType = item.EmployementType
                     };
 
-                 
+
                     var schedule = await _employeeService.GetEmployeeScheduleByEmployeeIdAsync(emploeeId);
-                    if (schedule.EmployeeScheduleId== 0)
+                    if (schedule.EmployeeScheduleId == 0)
                     {
                         await _employeeService.AddEmployeeScheduleAsync(scheduleDto);
                     }
                     else
                     {
-                        
+
                         await _employeeService.UpdateEmployeeScheduleAsync(scheduleDto);
                     }
 

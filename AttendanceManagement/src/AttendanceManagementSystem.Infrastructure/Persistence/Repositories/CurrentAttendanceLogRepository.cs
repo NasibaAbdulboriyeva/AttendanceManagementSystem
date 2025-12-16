@@ -49,6 +49,23 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
                 .AnyAsync(log => log.CreatedAt >= startOfMonth && log.CreatedAt <= endOfMonth);
             return exists;
         }
+        public async Task<DateTime?> GetLastAttendanceLogDateAsync(DateTime targetMonth)
+        {
+            var targetYear = targetMonth.Year;
+            var targetMonthValue = 11;
+
+            // Ma'lum bir oyga tegishli barcha AttendanceLog yozuvlari ichida 
+            // eng katta (oxirgi) CreatedAt (yaratilish) sanasini qidiramiz.
+            // Bu yozuvlar yaratish (Create) operatsiyasi tugagandan so'ng paydo bo'ladi.
+
+            var lastCreatedDate = await _context.CurrentAttendanceLogs
+                .Where(log => log.EntryDay.Year == targetYear && log.EntryDay.Month == targetMonthValue)
+                .MaxAsync(log => (DateTime?)log.CreatedAt); // log.CreatedAt - bazaga yozilgan sana
+
+            return lastCreatedDate;
+        }
+
+
         public async Task UpdateRangeAsync(IEnumerable<CurrentAttendanceLog> logs)
         {
             if (logs == null || !logs.Any())
