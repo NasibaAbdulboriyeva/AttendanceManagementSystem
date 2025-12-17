@@ -15,8 +15,7 @@ namespace AttendanceManagementSystem.Api
             builder.ConfigureDI();
 
 
-
-            builder.Services.AddAuthentication("Cookies")
+           builder.Services.AddAuthentication("Cookies")
           .AddCookie("Cookies", options =>
            {
                options.LoginPath = "/Auth/Login";

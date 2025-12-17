@@ -15,7 +15,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         {
             _authService = authService;
         }
-
+           
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -23,7 +23,6 @@ namespace AttendanceManagementSystem.Api.Controllers
             {
 
                 return RedirectToAction("Dashboard", "AdminAttendance");
-
             }
 
             ViewData["ReturnUrl"] = returnUrl;
@@ -80,8 +79,7 @@ namespace AttendanceManagementSystem.Api.Controllers
                 return View(model);
             }
         }
-        // ... (qolgan kodlar o'zgarishsiz)
-        // ---------------- SIGNUP (GET) ----------------
+    
         [HttpGet]
         public IActionResult SignUp()
         {
@@ -91,7 +89,6 @@ namespace AttendanceManagementSystem.Api.Controllers
             return View(new UserCreateDto());
         }
 
-        // ---------------- SIGNUP (POST) ----------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SignUp(UserCreateDto model)
@@ -119,7 +116,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            // Cookie ni o'chirish
+           
             await HttpContext.SignOutAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme
             );
@@ -135,7 +132,6 @@ namespace AttendanceManagementSystem.Api.Controllers
                 return RedirectToAction("Dashboard", "AdminAttendance");
 
             }
-
            
             return RedirectToAction("Dashboard", "AdminAttendance");
         }

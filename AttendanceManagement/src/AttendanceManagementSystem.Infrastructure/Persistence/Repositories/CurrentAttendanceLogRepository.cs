@@ -43,9 +43,8 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             var startOfMonth = new DateTime(month.Year, month.Month, 1);
             var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
 
-            // CurrentAttendanceLog jadvalida shu oy ichida yaratilgan (CreatedAt) yozuv bormi?
-            // Agar bitta yozuv bo'lsa ham, TRUE qaytadi.
-            bool exists = await _context.CurrentAttendanceLogs // Sizning DbSet nomingizni ishlatdim
+           
+            bool exists = await _context.CurrentAttendanceLogs 
                 .AnyAsync(log => log.CreatedAt >= startOfMonth && log.CreatedAt <= endOfMonth);
             return exists;
         }
@@ -53,10 +52,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         {
             var targetYear = targetMonth.Year;
             var targetMonthValue = 11;
-
-            // Ma'lum bir oyga tegishli barcha AttendanceLog yozuvlari ichida 
-            // eng katta (oxirgi) CreatedAt (yaratilish) sanasini qidiramiz.
-            // Bu yozuvlar yaratish (Create) operatsiyasi tugagandan so'ng paydo bo'ladi.
 
             var lastCreatedDate = await _context.CurrentAttendanceLogs
                 .Where(log => log.EntryDay.Year == targetYear && log.EntryDay.Month == targetMonthValue)
@@ -74,12 +69,9 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
                 return;
             }
 
-            // 1. EF Core ga barcha obyektlardagi o'zgarishlarni belgilash
-            // UpdateRange sinxron metod bo'lib, ob'ektlarni "Modified" holatiga o'tkazadi.
             _context.CurrentAttendanceLogs.UpdateRange(logs);
 
-            // 2. O'zgarishlarni bazaga saqlash
-            // SaveChangesAsync bitta tranzaktsiyada barcha belgilangan o'zgarishlarni UPDATE so'rovlari orqali yuboradi.
+           
             await _context.SaveChangesAsync();
         }
         public async Task DeleteMonthlyLogsAsync(long employeeId, DateTime month)
@@ -153,8 +145,8 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             var dateTimeEndDate = dateTimeStartDate.AddMonths(1);
 
             // 2. Filtrlash uchun DateOnly turiga o'tkazish
-            var startDate = DateOnly.FromDateTime(dateTimeStartDate); // Endi DateOnly
-            var endDate = DateOnly.FromDateTime(dateTimeEndDate);     // Endi DateOnly
+            var startDate = DateOnly.FromDateTime(dateTimeStartDate); 
+            var endDate = DateOnly.FromDateTime(dateTimeEndDate);    
 
             // 3. EF Core yordamida bazadan ma'lumotlarni so'rash.
             var totalUnjustifiedLateMinutes = await _context.CurrentAttendanceLogs // Yoki MonthlyLogs

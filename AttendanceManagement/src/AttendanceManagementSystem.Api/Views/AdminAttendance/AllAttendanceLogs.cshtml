@@ -1,0 +1,80 @@
+﻿@model IEnumerable<AttendanceManagementSystem.Api.Models.AttendanceLogModel>
+
+@{
+    ViewData["Title"] = "История логов";
+    var employeeName = Model.FirstOrDefault()?.EmployeeName ?? "Сотрудник";
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h2 class="m-0 font-weight-bold text-primary">
+            <i class="fas fa-list-ul me-2"></i> Все входы: @employeeName
+        </h2>
+        <button class="btn btn-secondary btn-sm shadow-sm" onclick="window.history.back()">
+            <i class="fas fa-arrow-left"></i> Назад
+        </button>
+    </div>
+
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info text-center">
+                Записи за этот период не найдены.
+            </div>
+        }
+        else
+        {
+            var groupedLogs = Model.GroupBy(l => l.EntryTime.Date).OrderBy(g => g.Key);
+
+            foreach (var group in groupedLogs)
+            {
+                <div class="card mb-3 border-left-info shadow-sm">
+                    <div class="card-header bg-light py-2">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h6 class="m-0 font-weight-bold text-dark">
+                                    <i class="fas fa-calendar-day text-info me-2"></i>
+                                    @group.Key.ToString("dd.MM.yyyy") — @group.Key.ToString("dddd")
+                                </h6>
+                            </div>
+                            <div class="col-auto text-right">
+                                <span class="badge badge-info">@group.Count() записей</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="pl-4" style="width: 150px;">Время</th>
+                                  
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    var count = 1;
+                                }
+                                @foreach (var log in group.OrderBy(l => l.EntryTime))
+                                {
+                                    <tr>
+                                        <td class="pl-4 font-weight-bold text-primary">
+                                            @log.EntryTime.ToString("HH:mm:ss")
+                                        </td>
+                                        
+                                    </tr>
+                                    count++;
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<div class="mt-4">
+    <a asp-controller="AdminAttendance" asp-action="Dashboard" class="btn btn-secondary shadow">
+        <i class="fas fa-home me-1"></i> Вернуться в панель управления
+    </a>
+</div>

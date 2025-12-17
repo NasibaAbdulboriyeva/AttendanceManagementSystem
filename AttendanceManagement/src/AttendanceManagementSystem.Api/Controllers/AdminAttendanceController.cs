@@ -19,7 +19,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         [HttpGet]
         public IActionResult Instructions()
         {
-            // Agar statik matn bo'lsa, model kerak emas.
+           
             ViewData["Title"] = "Инструкция по Использованию Админ-Панели";
             return View();
         }
@@ -53,16 +53,31 @@ namespace AttendanceManagementSystem.Api.Controllers
             catch (Exception ex)
             {
                 model.Message = $"❌ Ошибка при синхронизации логов:{ex.Message}";
-
             }
 
             return View(model);
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetDetails(string username, int year, int month)
+        {
+            var startDate = new DateTime(year,12, 1);
+            var endDate = startDate.AddMonths(1).AddDays(-1);
+            var employeeId = await _employeeService.GetEmployeeIdByUsernameAsync(username);
+            var logs = await _logService.GetLogsByEmployeeIdAsync(employeeId, startDate, endDate);
+            var result = logs.Select(log => new AttendanceLogModel
+            {
+                EntryTime = log.RecordedTime,
+                EmployeeName=username,
+              
+            }).ToList();
+
+            return View("AllAttendanceLogs",result);
+        }
+
+        [HttpGet]
         public IActionResult EmployeeSync()
         {
-
             return View(new SyncViewModel());
         }
 
@@ -79,7 +94,6 @@ namespace AttendanceManagementSystem.Api.Controllers
             }
             catch (Exception ex)
             {
-
                 model.Message = $"❌ Ошибка при синхронизации сотрудников: {ex.Message}";
 
             }
@@ -120,15 +134,11 @@ namespace AttendanceManagementSystem.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> ViewCreateCalendarForAll(int year, int month)
         {
-            var targetMonth = new DateTime(
-                year == 0 ? DateTime.Now.Year : year,
-                month == 0 ? 12 : month, 1);
-
+            var targetMonth = new DateTime(year == 0 ? DateTime.Now.Year : year, month == 0 ? 12 : month, 1);
 
             bool alreadyRunThisMonth = await _calculationService.HasMonthlyAttendanceLogs(targetMonth);
 
             DateTime? lastRunDate = null;
-
 
             if (!alreadyRunThisMonth)
             {
@@ -145,7 +155,6 @@ namespace AttendanceManagementSystem.Api.Controllers
                         TempData["SuccessMessage"] =
                             $"✅ Календарь за {targetMonth:yyyy-MM} месяц успешно создан. " +
                             $"Дата запуска: {lastRunDate.Value:yyyy-MM-dd HH:mm:ss}";
-                 
 
                         var finalViewModel = new AttendanceCalendarViewModel // Bu modelni View("Calendar") ishlatadi
                         {
@@ -162,7 +171,7 @@ namespace AttendanceManagementSystem.Api.Controllers
                 }
                 catch (Exception ex)
                 {
-                    // Jiddiy xato yuz berdi
+                    
                     TempData["ErrorMessage"] = $"❌ При создании календаря за {targetMonth:yyyy-MM} месяц произошла серьезная ошибка: {ex.Message}";
                 }
             }
@@ -426,7 +435,7 @@ namespace AttendanceManagementSystem.Api.Controllers
             }
             catch (Exception ex)
             {
-                // Server xatosi
+               
                 return StatusCode(500, new
                 {
                     isSuccess = false,

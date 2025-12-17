@@ -33,8 +33,6 @@ namespace AttendanceManagementSystem.Api.Configurations
             builder.Services.AddScoped<IValidator<UserCreateDto>, UserCreateValidator>();
             builder.Services.AddScoped<IValidator<UserLoginDto>, UserLoginValidator>();
          
-            //builder.Services.AddScoped<IUploadService, UploadService>();
-            //builder.Services.AddScoped<IDoorActivityLogRepository, DoorActivityLogRepository>();
             builder.Services.AddHttpClient<ITTLockService, TTLockService>();
             builder.Services.Configure<TTLockSettings>(
             builder.Configuration.GetSection("TTLockApiSettings"));

@@ -26,7 +26,6 @@ namespace AttendanceManagementSystem.Application.Services
             var lockId = _settings.LockId;
 
             DateTime? lastRecordTime = await _logRepository.GetLastRecordedTimeAsync();
-
             DateTimeOffset syncStart;
 
             if (lastRecordTime.HasValue)
@@ -36,8 +35,7 @@ namespace AttendanceManagementSystem.Application.Services
             }
             else
             {
-                //bu agar bazada umuman log bomasa yani 1 chi yaratvolishchun kere 
-                // 30 kun oldingi hozgri kundan boshlab (naprimer)
+                
                 syncStart = new DateTimeOffset(DateTime.UtcNow.AddDays(-30).Date, TimeSpan.Zero);
             }
 
@@ -100,7 +98,6 @@ namespace AttendanceManagementSystem.Application.Services
             if (string.IsNullOrEmpty(dto.Username) || !employeeLookup.TryGetValue(dto.Username, out var employee))
             {
                 return null;
-
             }
 
             return new AttendanceLog
@@ -115,14 +112,10 @@ namespace AttendanceManagementSystem.Application.Services
             };
         }
 
-        public Task<ICollection<AttendanceLog>> GetLogsByEmployeeIdAsync(long employeeId, DateTime startDate, DateTime endDate)
+        public async Task<ICollection<AttendanceLog>> GetLogsByEmployeeIdAsync(long employeeId, DateTime startDate, DateTime endDate)
         {
-            var attendanceLog = _logRepository.GetLogsForEmployeeAndPeriodAsync(employeeId, startDate, endDate);
-            if (attendanceLog == null)
-            {
-                throw new Exception("No attendanceLogs found for the specified employee and date range.");
-            }
-            return attendanceLog;
+            var attendanceLogs = await _logRepository.GetLogsForEmployeeAndPeriodAsync(employeeId, startDate, endDate);
+            return attendanceLogs;
         }
 
         public Task<ICollection<AttendanceLog>> GetLogsForAllEmployeesByDayAsync(DateTime targetDate)
@@ -136,7 +129,6 @@ namespace AttendanceManagementSystem.Application.Services
 
             return attendanceLog;
         }
-
 
     }
 

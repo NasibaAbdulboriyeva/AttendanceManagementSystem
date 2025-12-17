@@ -1,5 +1,4 @@
 ﻿using AttendanceManagementSystem.Application.DTOs;
-using AttendanceManagementSystem.Domain.Entities;
 
 namespace AttendanceManagementSystem.Application.Services
 {

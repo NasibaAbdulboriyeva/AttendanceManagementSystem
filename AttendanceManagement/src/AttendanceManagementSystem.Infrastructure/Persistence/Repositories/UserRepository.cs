@@ -7,12 +7,11 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
     public class UserRepository : IUserRepository
     {
         private readonly AppDbContext _context;
-
         public UserRepository(AppDbContext context)
         {
             _context = context;
         }
-
+    
         public async Task DeleteUserAsync(long userId)
         {
             var user = await SelectUserByIdAsync(userId);

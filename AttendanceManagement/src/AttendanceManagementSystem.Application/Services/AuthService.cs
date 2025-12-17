@@ -24,8 +24,7 @@ namespace AttendanceManagementSystem.Application.Services
             UserLoginValidator = userLoginValidator;
         }
 
-        // --- 1. LOGIN MANTIQI (MVC uchun moslashtirildi) ---
-        // Endi LoginResponseDto o'rniga Claims ro'yxatini qaytaradi.
+     
         public async Task<List<Claim>?> LoginUserAsync(UserLoginDto userLoginDto)
         {
             var validationResult = await UserLoginValidator.ValidateAsync(userLoginDto);
@@ -45,7 +44,6 @@ namespace AttendanceManagementSystem.Application.Services
                 return null;
             }
 
-            // Parolni tekshirish
             var checkUserPassword = PasswordHasher.Verify(userLoginDto.Password, user.Password, user.Salt);
 
             if (checkUserPassword == false)
@@ -58,7 +56,7 @@ namespace AttendanceManagementSystem.Application.Services
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(ClaimTypes.GivenName, user.FirstName), // Shaxsiy ism
+                new Claim(ClaimTypes.GivenName, user.FirstName), 
                  
             };
 
@@ -73,11 +71,10 @@ namespace AttendanceManagementSystem.Application.Services
                 throw new ValidationException("Ro'yxatdan o'tish ma'lumotlari xato.", validationResult.Errors);
             }
 
-            // Duplikat UserName ni tekshirish
             var existingUser = await UserRepository.SelectUserByUserNameAsync(userCreateDto.UserName);
             if (existingUser != null)
             {
-                // Buni Repository qatlami bajarishi kerak, lekin xizmatda tekshirish ham yaxshi.
+             
                 throw new Exception("Foydalanuvchi nomi band qilingan.");
             }
 
@@ -85,12 +82,12 @@ namespace AttendanceManagementSystem.Application.Services
 
             var user = Convert.ToUser(userCreateDto, tupleFromHasher.Hash, tupleFromHasher.Salt);
 
-            // Foydalanuvchini bazaga kiritish
+          
             var userId = await UserRepository.InsertUserAsync(user);
 
             var userEntityWithId = await UserRepository.SelectUserByIdAsync(userId);
 
-            // Controllerga muvaffaqiyatli yaratilgan UserDto ni qaytarish
+            
             return Convert.ToUserDto(userEntityWithId);
         }
     }
