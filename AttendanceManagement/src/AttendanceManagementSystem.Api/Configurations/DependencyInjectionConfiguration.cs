@@ -14,6 +14,7 @@ namespace AttendanceManagementSystem.Api.Configurations
         public static void ConfigureDI(this WebApplicationBuilder builder)
         {
             builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+            builder.Services.AddScoped<IScheduleTrackRepository, ScheduleTrackRepository>();
             builder.Services.AddScoped<IEmployeeService, EmployeeService>();
             builder.Services.AddScoped<IAttendanceLogRepository, AttendanceLogRepository>();
             builder.Services.AddScoped<IAttendanceLogService, AttendanceLogService>();

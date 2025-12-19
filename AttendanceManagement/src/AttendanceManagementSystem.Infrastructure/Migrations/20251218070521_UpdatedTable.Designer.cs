@@ -4,6 +4,7 @@ using AttendanceManagementSystem.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AttendanceManagementSystem.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251218070521_UpdatedTable")]
+    partial class UpdatedTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -295,47 +298,6 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                     b.ToTable("EmployeeSchedules", (string)null);
                 });
 
-            modelBuilder.Entity("AttendanceManagementSystem.Domain.Entities.EmployeeScheduleHistory", b =>
-                {
-                    b.Property<long>("EmployeeScheduleHistoryId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("EmployeeScheduleHistoryId"));
-
-                    b.Property<long>("EmployeeId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("EmployementType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<TimeOnly>("EndTime")
-                        .HasColumnType("time");
-
-                    b.Property<int>("LimitInMinutes")
-                        .HasColumnType("int");
-
-                    b.Property<TimeOnly>("StartTime")
-                        .HasColumnType("time");
-
-                    b.Property<DateTime>("ValidFrom")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
-
-                    b.Property<DateTime>("ValidTo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
-
-                    b.HasKey("EmployeeScheduleHistoryId");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.ToTable("EmployeeScheduleHistories", (string)null);
-                });
-
             modelBuilder.Entity("AttendanceManagementSystem.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<long>("RefreshTokenId")
@@ -457,17 +419,6 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
                     b.Navigation("Employee");
                 });
 
-            modelBuilder.Entity("AttendanceManagementSystem.Domain.Entities.EmployeeScheduleHistory", b =>
-                {
-                    b.HasOne("AttendanceManagementSystem.Domain.Entities.Employee", "Employee")
-                        .WithMany("EmployeeScheduleHistories")
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-                });
-
             modelBuilder.Entity("AttendanceManagementSystem.Domain.Entities.RefreshToken", b =>
                 {
                     b.HasOne("AttendanceManagementSystem.Domain.Entities.User", "User")
@@ -487,8 +438,6 @@ namespace AttendanceManagementSystem.Infrastructure.Migrations
 
                     b.Navigation("EmployeeSchedule")
                         .IsRequired();
-
-                    b.Navigation("EmployeeScheduleHistories");
                 });
 
             modelBuilder.Entity("AttendanceManagementSystem.Domain.Entities.User", b =>

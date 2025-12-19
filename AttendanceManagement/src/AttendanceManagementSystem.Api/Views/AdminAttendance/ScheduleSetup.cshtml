@@ -6,79 +6,85 @@
 }
 
 <h2 class="mb-4 text-primary">🗓️ Управление рабочими графиками сотрудников</h2>
-<p class="text-muted">Просмотр и настройка рабочего времени (Начало/Конец) и лимита опозданий для каждого активного сотрудника.</p>
+<p class="text-muted">Выберите сотрудников, настройте время и нажмите "Сохранить". Изменения коснутся только выбранных строк.</p>
 
 @if (!string.IsNullOrEmpty(Model.Message))
 {
-    // Xabar turiga qarab rang belgilash
     var alertClass = Model.Message.StartsWith("✅") ? "alert-success" : "alert-danger";
-    <div class="alert @alertClass mt-3" role="alert">@Model.Message</div>
+    <div class="alert @alertClass mt-3 alert-dismissible fade show" role="alert">
+        @Model.Message
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 }
 
-<form asp-action="ScheduleSetup" method="post">
+<form asp-action="ScheduleSetup" method="post" id="scheduleForm">
     @Html.AntiForgeryToken()
 
     <div class="table-responsive">
-        <table class="table table-bordered table-hover shadow-sm">
+        <table class="table table-bordered table-hover shadow-sm align-middle">
             <thead class="table-primary">
                 <tr>
+                    <th class="text-center" style="width: 50px;">
+                        <div class="form-check d-flex justify-content-center">
+                            <input type="checkbox" id="selectAll" class="form-check-input" style="cursor: pointer; width: 20px; height: 20px;" />
+                        </div>
+                    </th>
                     <th>ФИО Сотрудника</th>
-                    <th style="width: 120px;">Начало Работы</th>
-                    <th style="width: 120px;">Конец Работы</th>
-                    <th style="width: 120px;">Лимит Опозданий (мин)</th>
-                    <th style="width: 150px;">Тип Занятости</th>
+                    <th style="width: 130px;">Начало Работы</th>
+                    <th style="width: 130px;">Конец Работы</th>
+                    <th style="width: 140px;">Лимит Опозданий (мин)</th>
+                    <th style="width: 180px;">Тип Занятости</th>
                 </tr>
             </thead>
 
             <tbody>
                 @for (int i = 0; i < Model.Schedules.Count; i++)
                 {
-                    // Ranglar mantig'i: agar ScheduleId > 0 bo'lsa - tahrirlash (yashil), aks holda - yangi kiritish (sariq/ogohlantirish)
-                    var rowClass = Model.Schedules[i].EmployeeScheduleId > 0 ? "table-light-success" : "table-light-warning border border-warning";
+                    var rowClass = Model.Schedules[i].EmployeeScheduleId > 0 ? "table-light-success" : "table-light-warning";
 
-                    <tr class="@rowClass">
-
-                        <td>
-                            <strong class="text-nowrap text-dark">@Model.Schedules[i].FullName</strong>
-                            @if (Model.Schedules[i].EmployeeScheduleId == 0)
-                            {
-                                <span class="badge bg-warning text-dark ml-2">New</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-success ml-2"></span>
-                            }
-
-                            <input type="hidden" asp-for="Schedules[@i].EmployeeId" />
-                            <input type="hidden" asp-for="Schedules[@i].EmployeeScheduleId" />
-                            <input type="hidden" asp-for="Schedules[@i].FullName" />
+                    <tr class="@rowClass schedule-row">
+                        <td class="text-center">
+                            <div class="form-check d-flex justify-content-center">
+                                <input type="checkbox" asp-for="Schedules[i].IsSelected" class="form-check-input select-row" style="cursor: pointer; width: 18px; height: 18px;" />
+                            </div>
                         </td>
 
                         <td>
-                            <input asp-for="Schedules[@i].StartTime" type="time" class="form-control form-control-sm" />
-                            <span asp-validation-for="Schedules[@i].StartTime" class="text-danger small"></span>
+                            <div class="d-flex align-items-center">
+                                <strong class="text-dark me-2">@Model.Schedules[i].FullName</strong>
+                                @if (Model.Schedules[i].EmployeeScheduleId == 0)
+                                {
+                                    <span class="badge bg-warning text-dark">New</span>
+                                }
+                            </div>
+
+                            @* Hidden fields - ma'lumotlar yo'qolmasligi uchun *@
+                            <input type="hidden" asp-for="Schedules[i].EmployeeId" />
+                            <input type="hidden" asp-for="Schedules[i].EmployeeScheduleId" />
+                            <input type="hidden" asp-for="Schedules[i].FullName" />
                         </td>
 
                         <td>
-                            <input asp-for="Schedules[@i].EndTime" type="time" class="form-control form-control-sm" />
-                            <span asp-validation-for="Schedules[@i].EndTime" class="text-danger small"></span>
+                            <input asp-for="Schedules[i].StartTime" type="time" class="form-control form-control-sm border-primary" />
+                            <span asp-validation-for="Schedules[i].StartTime" class="text-danger small"></span>
                         </td>
 
                         <td>
-                            <input asp-for="Schedules[@i].LimitInMinutes"
-                                   type="number"
-                                   min="0"
-                                   max="500" 
-                                   class="form-control form-control-sm" />
-                            <span asp-validation-for="Schedules[@i].LimitInMinutes" class="text-danger small"></span>
+                            <input asp-for="Schedules[i].EndTime" type="time" class="form-control form-control-sm border-primary" />
+                            <span asp-validation-for="Schedules[i].EndTime" class="text-danger small"></span>
                         </td>
 
                         <td>
-                            <select asp-for="Schedules[@i].EmployementType"
+                            <input asp-for="Schedules[i].LimitInMinutes" type="number" min="0" max="500" class="form-control form-control-sm" />
+                            <span asp-validation-for="Schedules[i].LimitInMinutes" class="text-danger small"></span>
+                        </td>
+
+                        <td>
+                            <select asp-for="Schedules[i].EmployementType"
                                     asp-items="Html.GetEnumSelectList<EmployementType>()"
-                                    class="form-control form-control-sm">
+                                    class="form-select form-select-sm">
                             </select>
-                            <span asp-validation-for="Schedules[@i].EmployementType" class="text-danger small"></span>
+                            <span asp-validation-for="Schedules[i].EmployementType" class="text-danger small"></span>
                         </td>
                     </tr>
                 }
@@ -86,17 +92,17 @@
         </table>
     </div>
 
-    <div class="mt-4 d-flex justify-content-between">
-
-        @* ⭐ Yaxshilangan qaytish tugmasi ⭐ *@
-        <a asp-controller="AdminAttendance" asp-action="Dashboard" class="btn btn-secondary btn-lg shadow">
-            <i class="fas fa-arrow-left me-1"></i> Вернуться в панель управления
+    <div class="mt-4 d-flex justify-content-between align-items-center">
+        <a asp-controller="AdminAttendance" asp-action="Dashboard" class="btn btn-outline-secondary btn-lg shadow-sm">
+            <i class="fas fa-arrow-left me-2"></i> Вернуться назад
         </a>
-    </div>
-    <div class="mt-4 d-flex justify-content-end">
-        <button type="submit" class="btn btn-primary btn-lg shadow">
-            <i class="fas fa-save me-1"></i> Сохранить все изменения
-        </button>
+
+        <div class="text-end">
+            <span id="selectedCounter" class="me-3 text-muted fw-bold">Выбрано: 0</span>
+            <button type="submit" class="btn btn-primary btn-lg shadow px-5">
+                <i class="fas fa-save me-2"></i> Сохранить выбранные (@Model.Schedules.Count)
+            </button>
+        </div>
     </div>
 </form>
 
@@ -105,13 +111,78 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
+    <script>
+        $(document).ready(function () {
+            // Tanlanganlar sonini yangilash funksiyasi
+            function updateCounter() {
+                const count = $('.select-row:checked').length;
+                $('#selectedCounter').text('Выбрано: ' + count);
+
+                // Agar hech narsa tanlanmasa tugmani o'chirib qo'yish (ixtiyoriy)
+                const submitBtn = $('button[type="submit"]');
+                if(count === 0) {
+                    submitBtn.addClass('disabled').attr('title', 'Выберите хотя бы одну строку');
+                } else {
+                    submitBtn.removeClass('disabled').removeAttr('title');
+                }
+            }
+
+            // "Select All" bosilganda
+            $('#selectAll').on('change', function () {
+                const isChecked = $(this).prop('checked');
+                $('.select-row').prop('checked', isChecked);
+
+                // Qatorlarni vizual ajratish
+                if(isChecked) {
+                    $('.schedule-row').addClass('border-primary shadow-sm');
+                } else {
+                    $('.schedule-row').removeClass('border-primary shadow-sm');
+                }
+                updateCounter();
+            });
+
+            // Alohida qator checkboxi bosilganda
+            $('.select-row').on('change', function () {
+                if (!$(this).prop('checked')) {
+                    $('#selectAll').prop('checked', false);
+                    $(this).closest('tr').removeClass('border-primary shadow-sm');
+                } else {
+                    $(this).closest('tr').addClass('border-primary shadow-sm');
+                }
+
+                if ($('.select-row:checked').length === $('.select-row').length) {
+                    $('#selectAll').prop('checked', true);
+                }
+                updateCounter();
+            });
+
+            // Sahifa yuklanganda hisoblagichni ishga tushirish
+            updateCounter();
+        });
+    </script>
+
     <style>
-        /* Agar Bootstrapning maxsus yorug'lik klasslari bo'lmasa, ularni aniqlaymiz */
         .table-light-success {
-            background-color: #d1e7dd !important; /* Yengil yashil */
+            background-color: #e8f5e9 !important;
         }
+
         .table-light-warning {
-            background-color: #fff3cd !important; /* Yengil sariq */
+            background-color: #fffde7 !important;
+        }
+
+        .schedule-row {
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+        }
+
+            .schedule-row.border-primary {
+                border-left: 4px solid #0d6efd !important;
+                background-color: #f0f7ff !important;
+            }
+
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
         }
     </style>
 }

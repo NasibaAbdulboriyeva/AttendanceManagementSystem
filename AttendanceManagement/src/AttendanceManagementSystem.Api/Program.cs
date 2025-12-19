@@ -39,7 +39,7 @@ namespace AttendanceManagementSystem.Api
                 catch (Exception ex)
                 {
                     var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "Kritik xato: TTLock tokenlarini initsializatsiya qilishda muammo yuz berdi.");
+                    logger.LogError(ex, "Критическая ошибка: возникла проблема при инициализации токенов TTLock.");
                    
                 }
             }

@@ -13,6 +13,7 @@
         public DateTime? ModifiedAt { get; set; }
         public ICollection<AttendanceLog> AttendanceLogs { get; set; }
         public ICollection<CurrentAttendanceLog> CurrentAttendanceLogs { get; set; }
+        public ICollection<EmployeeScheduleHistory> EmployeeScheduleHistories { get; set; }
         public EmployeeSchedule EmployeeSchedule { get; set; }
     }
 }

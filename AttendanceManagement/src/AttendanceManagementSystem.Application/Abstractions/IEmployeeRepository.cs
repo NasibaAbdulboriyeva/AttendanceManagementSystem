@@ -16,5 +16,6 @@ namespace AttendanceManagementSystem.Application.Abstractions
         Task<ICollection<EmployeeSchedule>> GetAllSchedulesAsync();
         Task <long>AddEmployeeScheduleAsync(EmployeeSchedule schedule);
         Task UpdateScheduleAsync(EmployeeSchedule schedule);
+        Task <int>SaveChangesAsync();
     }
 }

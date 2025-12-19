@@ -12,7 +12,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<long> AddEmployeeAsync(Employee employee )
+        public async Task<long> AddEmployeeAsync(Employee employee)
         {
             _context.Employees.Add(employee);
             await _context.SaveChangesAsync();
@@ -39,7 +39,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
                                   .FirstOrDefaultAsync(e => e.UserName == username);
             return employee;
         }
-      
+
 
         public async Task UpdateEmployeeAsync(Employee employee)
         {
@@ -89,7 +89,9 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         public async Task UpdateScheduleAsync(EmployeeSchedule schedule)
         {
             _context.EmployeeSchedules.Update(schedule);
+            schedule.ModifiedAt = DateTime.Now;
             await _context.SaveChangesAsync();
+
         }
 
         public async Task<ICollection<Employee>> GetAllActiveEmployeesAsync()
@@ -107,6 +109,11 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
                                   .OrderBy(e => e.Employee.UserName)
                                   .ToListAsync();
         }
+        public async Task<int> SaveChangesAsync()
+        {
+            return await _context.SaveChangesAsync();
+
+        }
     }
-}
+    }
 

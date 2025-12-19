@@ -5,6 +5,7 @@ namespace AttendanceManagementSystem.Api.Models
 {
     public class ScheduleListItem
     {
+        public bool IsSelected { get; set; }
         public long EmployeeId { get; set; }
         public long EmployeeScheduleId { get; set; }
 
@@ -13,15 +14,16 @@ namespace AttendanceManagementSystem.Api.Models
 
         [Required(ErrorMessage = "Required field")]
         [Display(Name = "Время прихода")]
-        public TimeSpan StartTime { get; set; } 
+        public TimeOnly StartTime { get; set; } 
 
         [Display(Name = "Время уходa")]
-        public TimeSpan EndTime { get; set; }
+        public TimeOnly EndTime { get; set; }
 
         [Display(Name = "Лимит (min)")]
-        public int LimitInMinutes { get; set; } 
+        public int LimitInMinutes { get; set; }
 
         [Display(Name = "EmployementType")]
         public EmployementType EmployementType { get; set; }
+
     }
 }

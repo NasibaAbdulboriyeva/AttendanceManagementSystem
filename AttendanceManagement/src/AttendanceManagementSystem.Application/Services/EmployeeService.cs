@@ -2,23 +2,24 @@
 using AttendanceManagementSystem.Application.DTOs;
 using AttendanceManagementSystem.Domain.Entities;
 
-
 namespace AttendanceManagementSystem.Application.Services
 {
     public class EmployeeService : IEmployeeService
     {
         private readonly ITTLockService _ttLockService;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly IScheduleTrackRepository _scheduleTrackRepository;
 
-        public EmployeeService(ITTLockService ttLockService, IEmployeeRepository employeeRepository)
+        public EmployeeService(ITTLockService ttLockService, IEmployeeRepository employeeRepository,IScheduleTrackRepository scheduleTrackRepository)
         {
             _ttLockService = ttLockService;
             _employeeRepository = employeeRepository;
+            _scheduleTrackRepository = scheduleTrackRepository;
         }
 
         public async Task<(int CardsSynced, int FingerprintsSynced)> SyncEmployeeDataAsync()
         {
-            
+
             int cardsSynced = await SyncEmployeesByTypeAsync<TTLockIcCardDto>(
                 (searchStr, orderBy) => _ttLockService.GetAllIcCardRecordsAsync(searchStr, orderBy),
                 (employee, userDto) =>
@@ -56,7 +57,7 @@ namespace AttendanceManagementSystem.Application.Services
             ICollection<T> ttLockUsers;
             try
             {
-              
+
                 ttLockUsers = await fetchFunc(null, 1);
             }
             catch (Exception ex)
@@ -73,10 +74,10 @@ namespace AttendanceManagementSystem.Application.Services
             {
                 Employee? employee = null;
 
-               
+
                 if (ttUser is TTLockIcCardDto icCardDto)
                 {
-                    
+
                     if (icCardDto.CardId > 0)
                     {
                         employee = await _employeeRepository.GetEmployeeByUsernameAsync(icCardDto.CardName);
@@ -85,19 +86,19 @@ namespace AttendanceManagementSystem.Application.Services
 
                 else if (ttUser is TTLockFingerprintDto fingerprintDto)
                 {
-                   
+
                     if (fingerprintDto.FingerprintId > 0)
                     {
                         employee = await _employeeRepository.GetEmployeeByUsernameAsync(fingerprintDto.FingerprintName);
                     }
                 }
 
-             
+
                 bool isNew = (employee == null);
 
                 if (isNew)
                 {
-                  
+
                     employee = new Employee
                     {
                         CreatedAt = DateTime.Now,
@@ -107,8 +108,8 @@ namespace AttendanceManagementSystem.Application.Services
                     };
                 }
 
-              
-                mapAction(employee, ttUser); 
+
+                mapAction(employee, ttUser);
                 if (isNew)
                 {
                     await _employeeRepository.AddEmployeeAsync(employee);
@@ -177,15 +178,10 @@ namespace AttendanceManagementSystem.Application.Services
 
             return scheduleEntity.EmployeeScheduleId;
         }
-
+       
         public async Task<EmployeeScheduleDto?> GetEmployeeScheduleByEmployeeIdAsync(long employeeId)
         {
             var scheduleEntity = await _employeeRepository.GetScheduleByEmployeeIdAsync(employeeId);
-
-            if (scheduleEntity == null)
-            {
-                throw new Exception("Для сотрудника  расписание не найдено.");
-            }
 
             var scheduleDto = MapToDto(scheduleEntity);
 
@@ -205,23 +201,23 @@ namespace AttendanceManagementSystem.Application.Services
             {
                 throw new KeyNotFoundException($"Для сотрудника {scheduleDto.EmployeeId} расписание не найдено. Его нужно создать заранее.");
             }
+            var scheduleHistoryEntity = MapToHistory(existingSchedule);
+            var employeeScheduleHistory = await _scheduleTrackRepository.AddScheduleHistoryAsync(scheduleHistoryEntity);
 
-           
-            existingSchedule.ModifiedAt = DateTime.Now;
             existingSchedule.StartTime = scheduleDto.StartTime;
             existingSchedule.EndTime = scheduleDto.EndTime;
-         
+
             await _employeeRepository.UpdateScheduleAsync(existingSchedule);
         }
+
         public async Task<long> GetEmployeeIdByUsernameAsync(string username)
         {
             var employee = await _employeeRepository.GetEmployeeByUsernameAsync(username);
-
+            
             if (employee == null)
             {
                 throw new KeyNotFoundException($"Сотрудник с именем пользователя '{username}' не найден.");
             }
-
 
             return employee.EmployeeId;
         }
@@ -254,8 +250,7 @@ namespace AttendanceManagementSystem.Application.Services
             };
         }
         private Employee MapToEntity(EmployeeDto dto)
-        {
-
+        { 
             return new Employee
             {
                 UserName = dto.UserName,
@@ -270,16 +265,39 @@ namespace AttendanceManagementSystem.Application.Services
 
         private EmployeeScheduleDto MapToDto(EmployeeSchedule entity)
         {
-            if (entity == null) return null!;
+            if (entity == null)
+            {
+                return null!;
+            }
+
 
             return new EmployeeScheduleDto
             {
                 EmployeeId = entity.EmployeeId,
-                EmployeeScheduleId=entity.EmployeeScheduleId,
+                EmployeeScheduleId = entity.EmployeeScheduleId,
                 LimitInMinutes = entity.LimitInMinutes,
                 StartTime = entity.StartTime,
                 EndTime = entity.EndTime,
                 EmployementType = entity.EmployementType,
+            };
+        }
+
+        private EmployeeScheduleHistory MapToHistory(EmployeeSchedule entity)
+        {
+            if (entity == null)
+            {
+                return null!;
+            }
+
+            return new EmployeeScheduleHistory
+            {
+                EmployeeId = entity.EmployeeId,
+                LimitInMinutes = entity.LimitInMinutes,
+                StartTime = entity.StartTime,
+                EndTime = entity.EndTime,
+                EmployementType = entity.EmployementType,
+                ValidFrom = entity.ModifiedAt,
+                ValidTo = DateTime.Now
             };
         }
 

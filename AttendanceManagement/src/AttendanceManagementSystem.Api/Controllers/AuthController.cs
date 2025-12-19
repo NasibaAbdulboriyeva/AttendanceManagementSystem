@@ -36,7 +36,9 @@ namespace AttendanceManagementSystem.Api.Controllers
             ViewData["ReturnUrl"] = returnUrl;
 
             if (!ModelState.IsValid)
+            {
                 return View(model);
+            }
 
             try
             {
@@ -68,9 +70,12 @@ namespace AttendanceManagementSystem.Api.Controllers
                 );
 
                 if (Url.IsLocalUrl(returnUrl))
+                {
                     return Redirect(returnUrl);
 
-                return RedirectByRole();
+                }
+
+                return RedirectToAction("Dashboard", "AdminAttendance");
             }
            
             catch (Exception)

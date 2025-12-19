@@ -134,7 +134,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> ViewCreateCalendarForAll(int year, int month)
         {
-            var targetMonth = new DateTime(year == 0 ? DateTime.Now.Year : year, month == 0 ? 12 : month, 1);
+            var targetMonth = new DateTime(year == 0 ? DateTime.Now.Year : year, month == 0 ? 11 : month, 1);
 
             bool alreadyRunThisMonth = await _calculationService.HasMonthlyAttendanceLogs(targetMonth);
 
@@ -151,11 +151,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
                     if (alreadyRunThisMonth)
                     {
-                        
-                        TempData["SuccessMessage"] =
-                            $"✅ Календарь за {targetMonth:yyyy-MM} месяц успешно создан. " +
-                            $"Дата запуска: {lastRunDate.Value:yyyy-MM-dd HH:mm:ss}";
-
+                      
                         var finalViewModel = new AttendanceCalendarViewModel // Bu modelni View("Calendar") ishlatadi
                         {
                             TargetMonth = targetMonth,
@@ -183,10 +179,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
                 string lastRunDisplay = lastRunDate.HasValue ? lastRunDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : "неизвестна";
 
-                TempData["ErrorMessage"] =
-                    $"❌ Операция для {targetMonth:yyyy-MM} месяца уже была выполнена. " +
-                    $"Последняя дата создания записи: {lastRunDisplay}";
-
+               
                 return RedirectToAction("CalendarCreatedConfirmation", new
                 {
                     year = targetMonth.Year,
@@ -324,41 +317,49 @@ namespace AttendanceManagementSystem.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> ScheduleSetup()
         {
-            var allEmployeesDto = await _employeeService.GetAllActiveEmployeesAsync();
+            var allSchedules = await _employeeService.GetAllSchedulesAsync();
             var viewModel = new EmployeeScheduleViewModel();
-
-            if (TempData["SuccessMessage"] is string successMessage)
-            {
-                viewModel.Message = successMessage;
-            }
-            else if (TempData["ErrorMessage"] is string errorMessage)
-            {
-                viewModel.Message = errorMessage;
-            }
-
-            foreach (var employeeDto in allEmployeesDto.OrderBy(e => e.UserName))
+            if (allSchedules !=null )
             {
 
-                var scheduleDto = await _employeeService.GetEmployeeScheduleByEmployeeIdAsync(employeeDto.EmployeeId);
 
-                var item = new ScheduleListItem
+                var allEmployeesDto = await _employeeService.GetAllActiveEmployeesAsync();
+                
+
+                if (TempData["SuccessMessage"] is string successMessage)
                 {
-                    FullName = employeeDto.UserName,
-
-                };
-
-                if (scheduleDto != null)
+                    viewModel.Message = successMessage;
+                }
+                else if (TempData["ErrorMessage"] is string errorMessage)
                 {
-                    item.EmployeeScheduleId = scheduleDto.EmployeeScheduleId;
-                    item.StartTime = scheduleDto.StartTime;
-                    item.EndTime = scheduleDto.EndTime;
-                    item.LimitInMinutes = scheduleDto.LimitInMinutes;
-                    item.EmployementType = scheduleDto.EmployementType;
+                    viewModel.Message = errorMessage;
                 }
 
-                viewModel.Schedules.Add(item);
-            }
+                foreach (var employeeDto in allEmployeesDto.OrderBy(e => e.UserName))
+                {
 
+                    var scheduleDto = await _employeeService.GetEmployeeScheduleByEmployeeIdAsync(employeeDto.EmployeeId);
+
+                    var item = new ScheduleListItem
+                    {
+                        FullName = employeeDto.UserName,
+
+                    };
+
+                    if (scheduleDto != null)
+                    {
+                        item.EmployeeScheduleId = scheduleDto.EmployeeScheduleId;
+                        item.StartTime = scheduleDto.StartTime;
+                        item.EndTime = scheduleDto.EndTime;
+                        item.LimitInMinutes = scheduleDto.LimitInMinutes;
+                        item.EmployementType = scheduleDto.EmployementType;
+                    }
+
+                    viewModel.Schedules.Add(item);
+                }
+
+                return View(viewModel);
+            }
             return View(viewModel);
         }
 
@@ -454,10 +455,16 @@ namespace AttendanceManagementSystem.Api.Controllers
             }
 
             int updatedCount = 0;
+            var selectedSchedules = model.Schedules.Where(x => x.IsSelected).ToList();
 
+            if (!selectedSchedules.Any())
+            {
+                model.Message = "❌ Пожалуйста, выберите хотя бы одного сотрудника для обновления.";
+                return View(model);
+            }
             try
             {
-                foreach (var item in model.Schedules)
+                foreach (var item in selectedSchedules)
                 {
 
                     var emploeeId = await _employeeService.GetEmployeeIdByUsernameAsync(item.FullName);
@@ -472,15 +479,14 @@ namespace AttendanceManagementSystem.Api.Controllers
                         EmployementType = item.EmployementType
                     };
 
-
                     var schedule = await _employeeService.GetEmployeeScheduleByEmployeeIdAsync(emploeeId);
-                    if (schedule.EmployeeScheduleId == 0)
+                    if (schedule==null|| schedule.EmployeeId == 0)
                     {
                         await _employeeService.AddEmployeeScheduleAsync(scheduleDto);
                     }
+
                     else
                     {
-
                         await _employeeService.UpdateEmployeeScheduleAsync(scheduleDto);
                     }
 
@@ -488,7 +494,6 @@ namespace AttendanceManagementSystem.Api.Controllers
                 }
 
                 TempData["SuccessMessage"] = $"✅ Все {updatedCount} расписаний успешно сохранены или обновлены!";
-
                 return RedirectToAction(nameof(ScheduleSetup));
             }
             catch (Exception ex)

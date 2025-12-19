@@ -51,10 +51,15 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
                     .HasForeignKey(es => es.EmployeeId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasMany(e => e.EmployeeScheduleHistories)
+                  .WithOne(es => es.Employee)
+                  .HasForeignKey(es => es.EmployeeId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasOne(e => e.EmployeeSchedule)
                     .WithOne(es => es.Employee)
                     .HasForeignKey<EmployeeSchedule>(es => es.EmployeeId)
-                    .IsRequired(false) 
+                    .IsRequired(false)
                     .OnDelete(DeleteBehavior.Restrict);
         }
     }

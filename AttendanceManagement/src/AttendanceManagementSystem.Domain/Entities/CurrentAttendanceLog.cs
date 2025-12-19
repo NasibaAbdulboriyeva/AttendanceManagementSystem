@@ -12,6 +12,7 @@
         public bool IsWorkingDay { get; set; } 
         public DateTime  CalculatedAt { get; set; }
         public TimeOnly  FirstEntryTime { get; set; }
+        public TimeOnly  ScheduledStartTime { get; set; }
         public TimeOnly LastLeavingTime { get; set; }//ketish vaqt 
         public int WorkedHours { get; set; }//kuniga qancha ishlagani 
         public DateOnly EntryDay { get; set; }

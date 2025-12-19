@@ -68,14 +68,14 @@ namespace AttendanceManagementSystem.Application.Services
             var validationResult = await UserValidator.ValidateAsync(userCreateDto);
             if (!validationResult.IsValid)
             {
-                throw new ValidationException("Ro'yxatdan o'tish ma'lumotlari xato.", validationResult.Errors);
+                throw new ValidationException("Неверные регистрационные данные.", validationResult.Errors);
             }
 
             var existingUser = await UserRepository.SelectUserByUserNameAsync(userCreateDto.UserName);
             if (existingUser != null)
             {
              
-                throw new Exception("Foydalanuvchi nomi band qilingan.");
+                throw new Exception("Это имя пользователя уже занято.");
             }
 
             var tupleFromHasher = PasswordHasher.Hasher(userCreateDto.Password);

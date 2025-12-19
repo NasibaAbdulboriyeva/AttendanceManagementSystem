@@ -33,6 +33,10 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
                     .HasColumnType("time")
                     .IsRequired();
 
+            builder.Property(c => c.ScheduledStartTime)
+                    .HasColumnType("time")
+                    .IsRequired();
+
             builder.Property(c => c.LastLeavingTime)
                     .HasColumnType("time")
                     .IsRequired();

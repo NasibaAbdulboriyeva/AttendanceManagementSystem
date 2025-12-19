@@ -14,7 +14,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurat
             builder.HasOne(s => s.Employee)
                 .WithOne(e => e.EmployeeSchedule)
                 .HasForeignKey<EmployeeSchedule>(s => s.EmployeeId)
-                
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
 

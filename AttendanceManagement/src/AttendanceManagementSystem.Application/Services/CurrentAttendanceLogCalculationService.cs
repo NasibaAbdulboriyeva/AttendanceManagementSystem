@@ -44,12 +44,10 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
     {
         try
         {
-            
             return await _currentAttendanceLogRepository.GetLastAttendanceLogDateAsync(targetMonth);
         }
         catch (Exception ex)
         {
-           
             return null;
         }
     }
@@ -62,8 +60,9 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         {
             await GetAndSaveMonthlyAttendanceCalendarAsync(employee.EmployeeId, month);
         }
-       
+
     }
+
     public async Task ProcessUpdateForAllEmployeesMonthlyAttendanceAsync(DateOnly month)
     {
         var activeEmployeeIds = await _employeeRepository.GetAllActiveEmployeesAsync();
@@ -80,7 +79,6 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             date.DayOfWeek == DayOfWeek.Sunday)
         {
             return false;
-
         }
 
         return true;
@@ -103,7 +101,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             return 0;
         }
 
-        var scheduledStartDateTime = targetDate.Date + calendarDto.ScheduledStartTime;
+        var scheduledStartDateTime = targetDate.Date.Add(calendarDto.ScheduledStartTime.ToTimeSpan());
         var actualEntryDateTime = targetDate.Date + calendarDto.FirstEntryTime.ToTimeSpan();
 
         if (actualEntryDateTime <= scheduledStartDateTime)
@@ -136,7 +134,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
                     FirstEntry = g.OrderBy(log => log.RecordedTime).First()
                 }
             );
-                
+
         var existingLogDates = new HashSet<DateOnly>(
             allExistingLogs
                 .Select(log => DateOnly.FromDateTime(log.RecordedTime.Date))
@@ -173,7 +171,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
 
         return monthlyCalendar;
     }
-   
+
     public async Task UpdateMonthlyEntryTimesAsync(long employeeId, DateOnly month)
     {
         var logsToUpdate = await _currentAttendanceLogRepository.GetLogsWithoutEntryTimeAsync(employeeId, month);
@@ -190,29 +188,30 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         {
             return;
         }
-
+        var scheduleModifiedDate = DateOnly.FromDateTime(schedule.ModifiedAt);
         var updatedLogs = new List<CurrentAttendanceLog>();
 
         foreach (var log in logsToUpdate)
         {
-            
+
             if (attendanceEntryTimes.TryGetValue(log.EntryDay, out TimeOnly newEntryTime))
             {
-                
-                log.FirstEntryTime = newEntryTime;
+                if (log.EntryDay >= scheduleModifiedDate)
+                {
+                    log.ScheduledStartTime = schedule.StartTime; 
+                }
                 log.ModifiedAt = DateTime.Now;
-
+                log.FirstEntryTime = newEntryTime;
                 if (log.IsWorkingDay)
                 {
-                    
                     var calendarDtoForCalculation = new CurrentAttendanceCalendar
                     {
                         EmployeeId = employeeId,
-                        EntryDay = log.EntryDay, 
+                        EntryDay = log.EntryDay,
                         IsWorkingDay = log.IsWorkingDay,
-                        IsJustified=log.IsJustified,
+                        IsJustified = log.IsJustified,
                         FirstEntryTime = newEntryTime,
-                        ScheduledStartTime = schedule.StartTime
+                        ScheduledStartTime = log.ScheduledStartTime,
                     };
 
                     log.LateArrivalMinutes = CalculateLateMinutes(calendarDtoForCalculation, log.EntryDay.ToDateTime(TimeOnly.MinValue));
@@ -236,6 +235,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             EmployeeId = dto.EmployeeId,
             EntryDay = dto.EntryDay,
             FirstEntryTime = dto.FirstEntryTime,
+            ScheduledStartTime = dto.ScheduledStartTime,
             LastLeavingTime = dto.LastLeavingTime,
             LateArrivalMinutes = dto.LateMinutesTotal,
             RemainingLateMinutes = dto.RemainingLateMinutes,
@@ -290,13 +290,13 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         };
     }
 
-    private CurrentAttendanceCalendar MapEntityToCalendarDto(CurrentAttendanceLog entity, EmployeeSchedule schedule)
+    private CurrentAttendanceCalendar MapEntityToCalendarDto(CurrentAttendanceLog entity)
     {
 
         return new CurrentAttendanceCalendar
         {
             EmployeeId = entity.EmployeeId,
-            ScheduledStartTime = schedule.StartTime,
+            ScheduledStartTime = entity.ScheduledStartTime,
             LateMinutesTotal = entity.LateArrivalMinutes,
             RemainingLateMinutes = entity.RemainingLateMinutes,
             Description = entity.Description,
@@ -317,7 +317,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         var allCalendarLogs = await _currentAttendanceLogRepository.GetLogsByEmployeeIdAsync(employeeId);
         var schedule = await _employeeRepository.GetScheduleByEmployeeIdAsync(employeeId);
 
-        var logs = allCalendarLogs.Select(entity => MapEntityToCalendarDto(entity, schedule)).ToList();
+        var logs = allCalendarLogs.Select(entity => MapEntityToCalendarDto(entity)).ToList();
 
         var startDate = new DateTime(month.Year, 11, 1).Date;
         var endDate = startDate.AddMonths(1).Date;
@@ -340,27 +340,23 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             throw new InvalidOperationException($"Log not found for Employee {dto.EmployeeId} on {dto.EntryDay.ToShortDateString()}");
         }
 
-        var scheduledStartTime = await _employeeRepository.GetScheduleByEmployeeIdAsync(dto.EmployeeId)
-            .ContinueWith(t => t.Result?.StartTime);
+        var scheduledStartTime = await _employeeRepository.GetScheduleByEmployeeIdAsync(dto.EmployeeId);
 
-        if (!scheduledStartTime.HasValue)
-        {
-            scheduledStartTime = TimeSpan.Zero;
-        }
 
         log.FirstEntryTime = TimeOnly.FromTimeSpan(dto.ManualEntryTime);
         log.Description = dto.Description;
-     
-        
+        log.ScheduledStartTime = scheduledStartTime.StartTime;
+
+
         var tempCalendarDto = new CurrentAttendanceCalendar
         {
             FirstEntryTime = log.FirstEntryTime,
-            ScheduledStartTime = scheduledStartTime.Value,
-            IsWorkingDay=log.IsWorkingDay,
-          
+            ScheduledStartTime = log.ScheduledStartTime,
+            IsWorkingDay = log.IsWorkingDay,
+
         };
 
-        var minute=log.LateArrivalMinutes = CalculateLateMinutes(tempCalendarDto, log.EntryDay.ToDateTime(TimeOnly.MinValue));
+        var minute = log.LateArrivalMinutes = CalculateLateMinutes(tempCalendarDto, log.EntryDay.ToDateTime(TimeOnly.MinValue));
 
         await _currentAttendanceLogRepository.SaveChangesAsync();
         return minute;
@@ -369,8 +365,8 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
     public async Task<int> UpdateJustificationStatusAsync(UpdateJustificationDto dto)
     {
         var log = await _currentAttendanceLogRepository.GetLogByEmployeeIdAndEntryDayAsync(dto.EmployeeId, dto.EntryDay);
-        var scheduledStartTime = await _employeeRepository.GetScheduleByEmployeeIdAsync(dto.EmployeeId)
-          .ContinueWith(t => t.Result?.StartTime);
+        var scheduledStartTime = await _employeeRepository.GetScheduleByEmployeeIdAsync(dto.EmployeeId);
+
         if (log == null)
         {
             throw new Exception("log not found");
@@ -380,16 +376,17 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         log.Description = dto.Description;
         log.IsJustified = dto.IsJustified;
         log.ModifiedAt = DateTime.Now;
+        log.ScheduledStartTime = scheduledStartTime.StartTime;
 
         // YANGI IsJustified qiymati bilan CurrentAttendanceCalendar ob'ektini yaratish
         var tempCalendarDto = new CurrentAttendanceCalendar
         {
             // CalculateLateMinutes ishiga ta'sir qiladigan barcha kerakli ma'lumotlar kiritilishi kerak
             FirstEntryTime = log.FirstEntryTime,
-            ScheduledStartTime = scheduledStartTime.Value,
+            ScheduledStartTime = log.ScheduledStartTime,
             Description = log.Description,
             IsJustified = log.IsJustified,
-            IsWorkingDay= log.IsWorkingDay,
+            IsWorkingDay = log.IsWorkingDay,
         };
 
         // Kechikishni yangi (to'g'ri) holat bo'yicha hisoblash
@@ -401,8 +398,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
     public async Task<int> UpdateWorkingDayStatusAsync(WorkingDayStatusUpdateDto dto)
     {
         var log = await _currentAttendanceLogRepository.GetLogByEmployeeIdAndEntryDayAsync(dto.EmployeeId, dto.EntryDay);
-        var scheduledStartTime = await _employeeRepository.GetScheduleByEmployeeIdAsync(dto.EmployeeId)
-          .ContinueWith(t => t.Result?.StartTime);
+        var scheduledStartTime = await _employeeRepository.GetScheduleByEmployeeIdAsync(dto.EmployeeId);
         if (log == null)
         {
             throw new Exception("log not found");
@@ -411,18 +407,17 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         // Avval logni yangilash
         log.IsWorkingDay = dto.IsWorkingDay;
         log.ModifiedAt = DateTime.Now;
-
+        log.ScheduledStartTime = scheduledStartTime.StartTime;
         // YANGI IsJustified qiymati bilan CurrentAttendanceCalendar ob'ektini yaratish
         var tempCalendarDto = new CurrentAttendanceCalendar
         {
             IsWorkingDay = log.IsWorkingDay,
             FirstEntryTime = log.FirstEntryTime,
-            ScheduledStartTime = scheduledStartTime.Value,
+            ScheduledStartTime = log.ScheduledStartTime,
             Description = log.Description,
             IsJustified = log.IsJustified,
         };
 
-        // Kechikishni yangi (to'g'ri) holat bo'yicha hisoblash
         var minute = log.LateArrivalMinutes = CalculateLateMinutes(tempCalendarDto, log.EntryDay.ToDateTime(TimeOnly.MinValue));
 
         await _currentAttendanceLogRepository.UpdateLogAsync(log);
@@ -433,21 +428,20 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
     public async Task<string?> UpdateDescriptionAsync(DescriptionUpdateDto dto)
     {
         var log = await _currentAttendanceLogRepository.GetLogByEmployeeIdAndEntryDayAsync(dto.EmployeeId, dto.EntryDay);
-        
+
         if (log == null)
         {
             throw new Exception("log not found");
         }
 
-        // Avval logni yangilash
         log.Description = dto.Description;
         log.ModifiedAt = DateTime.Now;
 
 
         await _currentAttendanceLogRepository.UpdateLogAsync(log);
-       
+
         return log.Description;
-        
+
     }
 
 

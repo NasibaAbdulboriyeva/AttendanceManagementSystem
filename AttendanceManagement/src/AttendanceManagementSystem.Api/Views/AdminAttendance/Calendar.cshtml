@@ -3,7 +3,6 @@
     ViewData["Title"] = "Monthly Calendar";
     var currentMonth = Model.TargetMonth.ToString("MMMM yyyy");
 
-    // Helper: TimeOnly ni stringga formatlash
     string FormatTime(TimeOnly time) => time.ToString("HH:mm");
 }
 
@@ -65,7 +64,6 @@
                         var isLate = dayLog.LateMinutesTotal > 0;
                         var rowClass = isLate && !dayLog.IsJustified ? "table-danger" : "";
 
-                        // Shanba va yakshanba kunlarini aniqlash
                         var dayOfWeek = dayLog.EntryDay.DayOfWeek;
                         var isWeekend = (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday);
 
@@ -77,7 +75,6 @@
 
                             <td>@dayLog.EntryDay.ToString("dd.MM")</td>
 
-                            @* IsWorkingDay Checkbox va Vizual Status (YANGILANDI) *@
                             <td class="text-center working-day-cell">
                                 <div class="form-check form-switch d-flex align-items-center justify-content-center">
                                     <input type="checkbox"
@@ -95,7 +92,7 @@
                                 </div>
                             </td>
 
-                            <td>@(dayLog.ScheduledStartTime != TimeSpan.Zero ? dayLog.ScheduledStartTime.ToString(@"hh\:mm") : "—")</td>
+                            <td>@(dayLog.ScheduledStartTime != TimeOnly.MinValue ? dayLog.ScheduledStartTime.ToString(@"hh\:mm") : "—")</td>
 
                             <td>
                                 @{
@@ -162,7 +159,6 @@
 
 <div class="mt-4 d-flex justify-content-between">
 
-    @* ⭐ Yaxshilangan qaytish tugmasi ⭐ *@
     <a asp-controller="AdminAttendance" asp-action="Dashboard" class="btn btn-secondary btn-lg shadow">
         <i class="fas fa-arrow-left me-1"></i> Вернуться в панель управления
     </a>
@@ -214,8 +210,6 @@
                     statusSpan.html(`осталось ${remainingLate} минут`);
                 }
             }
-
-            
 
 
         $(document).ready(function () {
