@@ -134,7 +134,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> ViewCreateCalendarForAll(int year, int month)
         {
-            var targetMonth = new DateTime(year == 0 ? DateTime.Now.Year : year, month == 0 ? 11 : month, 1);
+            var targetMonth = new DateTime(year == 0 ? DateTime.Now.Year : year, month == 0 ? 12 : month, 1);
 
             bool alreadyRunThisMonth = await _calculationService.HasMonthlyAttendanceLogs(targetMonth);
 
@@ -151,7 +151,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
                     if (alreadyRunThisMonth)
                     {
-                      
+
                         var finalViewModel = new AttendanceCalendarViewModel // Bu modelni View("Calendar") ishlatadi
                         {
                             TargetMonth = targetMonth,
@@ -161,25 +161,25 @@ namespace AttendanceManagementSystem.Api.Controllers
                     }
                     else
                     {
-                       
+
                         TempData["ErrorMessage"] = $"⚠️ Создание календаря за {targetMonth:yyyy-MM} месяц завершено, но записи (логи) не были найдены.";
                     }
+
                 }
                 catch (Exception ex)
                 {
-                    
-                    TempData["ErrorMessage"] = $"❌ При создании календаря за {targetMonth:yyyy-MM} месяц произошла серьезная ошибка: {ex.Message}";
+                    TempData["ErrorMessage"] = $"❌ Ошибка при создании календаря за {targetMonth:yyyy-MM}: {ex.Message}";
                 }
             }
             else
             {
 
-                lastRunDate = await _calculationService.GetLastAttendanceLogDate(targetMonth); 
+                lastRunDate = await _calculationService.GetLastAttendanceLogDate(targetMonth);
 
 
                 string lastRunDisplay = lastRunDate.HasValue ? lastRunDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : "неизвестна";
 
-               
+
                 return RedirectToAction("CalendarCreatedConfirmation", new
                 {
                     year = targetMonth.Year,
@@ -219,7 +219,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             var targetMonth = new DateOnly(
                 year == 0 ? DateTime.Now.Year : year,
-                month == 0 ? 11 : month,
+                month == 0 ? 12 : month,
                 1
             );
 
@@ -241,7 +241,7 @@ namespace AttendanceManagementSystem.Api.Controllers
         {
             var month = targetMonth.HasValue
                 ? new DateTime(targetMonth.Value.Year, targetMonth.Value.Month, 1)
-                : new DateTime(DateTime.Now.Year, 11, 1);
+                : new DateTime(DateTime.Now.Year, 12, 1);
 
             var allEmployeesRaw = await _employeeService.GetAllActiveEmployeesAsync();
 
@@ -263,6 +263,7 @@ namespace AttendanceManagementSystem.Api.Controllers
                     employee.TotalLateMinutes = totalMinutes;
 
                 }
+              
             }
 
             var model = new AttendanceSummaryViewModel
@@ -274,6 +275,39 @@ namespace AttendanceManagementSystem.Api.Controllers
             return View(model);
         }
 
+
+        [HttpGet]
+        [HttpPost]
+        public async Task<IActionResult> DailyLateArrivalsSummary(DateOnly? day)
+        {
+            
+            DateOnly selectedDay = day ?? DateOnly.FromDateTime(DateTime.Now);
+
+            
+            var allEmployeesRaw = await _employeeService.GetAllActiveEmployeesAsync();
+
+            var lateSummaryDictionary = await _calculationService.GetEmployeesDailyLateSummaryAsync(selectedDay);
+
+            var employeesSummary = allEmployeesRaw
+                .Select(e => new EmployeeSummary
+                {
+                    EmployeeId = e.EmployeeId,
+                    FullName = e.UserName,
+                    TotalLateMinutes = lateSummaryDictionary.TryGetValue(e.EmployeeId, out int totalMinutes)
+                                       ? totalMinutes
+                                       : 0
+                })
+                .ToList();
+
+            var model = new AttendanceSummaryViewModel
+            {
+                Employees = employeesSummary,
+          
+                TargetMonth = selectedDay.ToDateTime(TimeOnly.MinValue)
+            };
+
+            return View(model);
+        }
         [HttpGet]
         public async Task<IActionResult> ViewCalendar(string username, int year, int month)
         {
@@ -285,7 +319,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             var targetMonth = new DateTime(
                 year == 0 ? DateTime.Now.Year : year,
-                month == 0 ? 11 : month, 1);
+                month == 0 ? 12 : month, 1);
 
             var employeeId = await _employeeService.GetEmployeeIdByUsernameAsync(username);
             var employee = await _employeeService.GetEmployeeByIdAsync(employeeId);

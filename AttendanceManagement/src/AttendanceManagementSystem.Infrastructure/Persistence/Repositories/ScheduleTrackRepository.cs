@@ -19,14 +19,18 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             return scheduleHistory.EmployeeScheduleHistoryId;
         }
 
-        public async Task<EmployeeScheduleHistory> GetScheduleByDateAndByEmployeeIdAsync(long employeeId,DateTime targetDate)
+        public async Task<ICollection<EmployeeScheduleHistory>> GetScheduleByDateAndByEmployeeIdAsync(long employeeId, DateOnly targetDate)
         {
+            
             var histories = await _context.EmployeeScheduleHistories
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.EmployeeId == employeeId &&
-                    x.ValidFrom.Date == targetDate.Date);
-            return histories;//null bo'sa eski ni obkelishi kere yani schedule digi vaqtini 
+                .Where(x => x.EmployeeId == employeeId &&
+                            x.ValidFrom.Year == targetDate.Year &&
+                            x.ValidFrom.Month == targetDate.Month)
+                .OrderBy(x => x.ValidFrom) 
+                .ToListAsync();
+
+            return histories;
         }
 
         public async Task<ICollection<EmployeeScheduleHistory>> GetScheduleHistoryByEmployeeIdAsync(long employeeId)

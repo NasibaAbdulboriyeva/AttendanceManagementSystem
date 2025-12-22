@@ -99,7 +99,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
                 throw new InvalidOperationException("TTLock токен не инициализирован.");
             }
 
-            // Token tugashiga 15 daqiqa qolganini tekshirish
             bool isTokenExpiredOrAboutToExpire =
                 tokenRecord.ExpiresAt.ToUniversalTime() < DateTime.UtcNow.AddMinutes(15);
 

@@ -52,9 +52,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         public async Task<long> AddEmployeeScheduleAsync(EmployeeSchedule schedule)
         {
 
-
             await _context.EmployeeSchedules.AddAsync(schedule);
-
             await _context.SaveChangesAsync();
             return schedule.EmployeeScheduleId;
         }

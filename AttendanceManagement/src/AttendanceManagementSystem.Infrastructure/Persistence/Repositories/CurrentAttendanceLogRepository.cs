@@ -76,7 +76,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         }
         public async Task DeleteMonthlyLogsAsync(long employeeId, DateTime month)
         {
-            var startDate = new DateTime(month.Year, 11, 1);
+            var startDate = new DateTime(month.Year, 12, 1);
 
             var logsToDelete = await _context.CurrentAttendanceLogs
                 .Where(l => l.EmployeeId == employeeId &&
@@ -145,8 +145,8 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             var dateTimeEndDate = dateTimeStartDate.AddMonths(1);
 
             // 2. Filtrlash uchun DateOnly turiga o'tkazish
-            var startDate = DateOnly.FromDateTime(dateTimeStartDate); 
-            var endDate = DateOnly.FromDateTime(dateTimeEndDate);    
+            var startDate = DateOnly.FromDateTime(dateTimeStartDate);
+            var endDate = DateOnly.FromDateTime(dateTimeEndDate);
 
             // 3. EF Core yordamida bazadan ma'lumotlarni so'rash.
             var totalUnjustifiedLateMinutes = await _context.CurrentAttendanceLogs // Yoki MonthlyLogs
@@ -160,8 +160,21 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
 
             return totalUnjustifiedLateMinutes;
         }
+        public async Task<int> GetLateArrivalsForDayAsync(long employeeId, DateOnly day)
+        {
+          
+            var startDate = day;
+            var totalUnjustifiedLateMinutes = await _context.CurrentAttendanceLogs 
+                .Where(log => log.EmployeeId == employeeId &&
+                              log.EntryDay == startDate &&
+                              log.IsWorkingDay == true &&
+                              log.IsJustified == false)
+                .SumAsync(log => log.LateArrivalMinutes);
+               
+            return totalUnjustifiedLateMinutes;
+        }
 
-      
+
         public Task<int> SaveChangesAsync()
         {
             return _context.SaveChangesAsync();

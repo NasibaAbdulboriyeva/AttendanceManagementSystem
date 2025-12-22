@@ -1,0 +1,127 @@
+﻿@model AttendanceSummaryViewModel
+
+@{
+    ViewData["Title"] = "Отчет о ежедневных опозданиях";
+    var totalEmployees = Model.Employees.Count;
+    var lateCount = Model.Employees.Count(x => x.TotalLateMinutes > 0);
+    var absentCount = Model.Employees.Count(x => x.TotalLateMinutes == -1);
+    var onTimeCount = Model.Employees.Count(x => x.TotalLateMinutes == 0);
+}
+
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white shadow-sm border-0" style="border-radius: 12px;">
+                <div class="card-body py-3 text-center">
+                    <h6 class="text-uppercase small" style="opacity: 0.8;">Всего</h6>
+                    <h3 class="mb-0 font-weight-bold">@totalEmployees</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-danger text-white shadow-sm border-0" style="border-radius: 12px;">
+                <div class="card-body py-3 text-center">
+                    <h6 class="text-uppercase small" style="opacity: 0.8;">Опоздали</h6>
+                    <h3 class="mb-0 font-weight-bold">@lateCount</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white shadow-sm border-0" style="border-radius: 12px;">
+                <div class="card-body py-3 text-center">
+                    <h6 class="text-uppercase small" style="opacity: 0.8;">Не пришли</h6>
+                    <h3 class="mb-0 font-weight-bold">@absentCount</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white shadow-sm border-0" style="border-radius: 12px;">
+                <div class="card-body py-3 text-center">
+                    <h6 class="text-uppercase small" style="opacity: 0.8;">Вовремя</h6>
+                    <h3 class="mb-0 font-weight-bold">@onTimeCount</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 p-4" style="border-radius: 15px;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="font-weight-bold mb-0" style="color: #2c3e50;">
+                <i class="fas fa-calendar-alt mr-2 text-primary"></i> Данные на @Model.TargetMonth.ToString("dd.MM.yyyy")
+            </h4>
+
+            <form asp-action="DailyLateArrivalsSummary" method="post" class="form-inline">
+                <div class="input-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                    <input type="date" name="day" class="form-control border-0"
+                           style="width: 180px; height: 45px; font-weight: 500;"
+                           value='@Model.TargetMonth.ToString("yyyy-MM-dd")' />
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-primary px-4 font-weight-bold">
+                            <i class="fas fa-filter mr-2"></i> Фильтровать
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover" id="attendanceTable">
+                <thead style="background-color: #f8f9fa;">
+                    <tr>
+                        <th class="py-3 border-0" style="border-radius: 10px 0 0 0; color: #6c757d;">Сотрудник</th>
+                        <th class="py-3 border-0 text-center" style="color: #6c757d;">Минуты</th>
+                        <th class="py-3 border-0 text-center" style="border-radius: 0 10px 0 0; color: #6c757d;">Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var emp in Model.Employees.OrderByDescending(x => x.TotalLateMinutes))
+                    {
+                        var status = emp.TotalLateMinutes;
+                        <tr style="@(status > 0 ? "background-color: #fffafb;" : "")">
+                            <td class="align-middle py-3">
+                                <span style="font-size: 1.1rem; font-weight: 700; color: #2c3e50;">@emp.FullName</span>
+                            </td>
+                            <td class="align-middle text-center">
+                                @if (status > 0)
+                                {
+                                    <span class="badge badge-danger shadow-sm" style="font-size: 0.95rem; padding: 7px 14px; border-radius: 6px; background-color: #dc3545;">
+                                        @status мин.
+                                    </span>
+                                }
+                                else if (status == 0)
+                                {
+                                    <span class="badge badge-light text-muted border" style="font-size: 0.85rem; padding: 5px 10px;">0 мин.</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted" style="font-size: 1.2rem;">—</span>
+                                }
+                            </td>
+                            <td class="align-middle text-center">
+                                @if (status > 0)
+                                {
+                                    <span style="color: #e74c3c; font-weight: 700;">
+                                        <i class="fas fa-clock mr-1"></i> Опоздал(а)
+                                    </span>
+                                }
+                                else if (status == 0)
+                                {
+                                    <span style="color: #27ae60; font-weight: 700;">
+                                        <i class="fas fa-check-circle mr-1"></i> Вовремя
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span style="color: #f39c12; font-weight: 700;">
+                                        <i class="fas fa-user-slash mr-1"></i> Не пришел(а)
+                                    </span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

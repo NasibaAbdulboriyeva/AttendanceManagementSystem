@@ -13,6 +13,7 @@ namespace AttendanceManagementSystem.Application.Abstractions
         Task<bool> HasMonthlyAttendanceLogs(DateTime month);
         Task<DateTime?> GetLastAttendanceLogDateAsync(DateTime targetMonth);
         Task<int> GetLateArrivalsForPeriodAsync(long employeeId, DateTime month);
+        Task<int> GetLateArrivalsForDayAsync(long employeeId, DateOnly day);
         Task DeleteLogAsync(long id);
         Task DeleteMonthlyLogsAsync(long employeeId, DateTime month);
         Task<ICollection<CurrentAttendanceLog>> GetLogsWithoutEntryTimeAsync(long employeeId, DateOnly month);

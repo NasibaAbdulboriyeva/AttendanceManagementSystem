@@ -41,6 +41,7 @@ namespace AttendanceManagementSystem.Application.Services
                         employee.UserName = userDto.FingerprintName ?? string.Empty;
 
                     }
+
                 });
 
             return (cardsSynced, fingerprintsSynced);
@@ -93,12 +94,10 @@ namespace AttendanceManagementSystem.Application.Services
                     }
                 }
 
-
                 bool isNew = (employee == null);
 
                 if (isNew)
                 {
-
                     employee = new Employee
                     {
                         CreatedAt = DateTime.Now,
@@ -131,7 +130,7 @@ namespace AttendanceManagementSystem.Application.Services
             var employee = await _employeeRepository.GetEmployeeByIdAsync(id); // Kod orqali qidirish
             if (employee == null)
             {
-                throw new KeyNotFoundException($"Xodim {id} idsi bo'yicha topilmadi.");
+                throw new KeyNotFoundException($"Сотрудник с идентификатором {id} не найден.");
             }
 
             employee.IsActive = false;
@@ -160,6 +159,7 @@ namespace AttendanceManagementSystem.Application.Services
             }
             return MapToDto(employee);
         }
+
         public async Task<long> AddEmployeeScheduleAsync(EmployeeScheduleDto scheduleDto)
         {
             if (scheduleDto == null)

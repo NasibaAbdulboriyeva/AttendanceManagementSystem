@@ -6,6 +6,6 @@ namespace AttendanceManagementSystem.Application.Abstractions
     {
         Task <long> AddScheduleHistoryAsync (EmployeeScheduleHistory scheduleHistory);
         Task <ICollection<EmployeeScheduleHistory>> GetScheduleHistoryByEmployeeIdAsync (long employeeId);
-        Task <EmployeeScheduleHistory> GetScheduleByDateAndByEmployeeIdAsync(long employeeId,DateTime targetDate);
+        Task <ICollection<EmployeeScheduleHistory>> GetScheduleByDateAndByEmployeeIdAsync(long employeeId,DateOnly targetDate);
     }
 }
