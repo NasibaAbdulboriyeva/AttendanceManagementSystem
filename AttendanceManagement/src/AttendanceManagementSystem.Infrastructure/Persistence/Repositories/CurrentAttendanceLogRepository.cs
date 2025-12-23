@@ -32,7 +32,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
                 .Where(l => l.EmployeeId == employeeId &&
                             l.EntryDay.Year == month.Year &&
                             l.EntryDay.Month == month.Month &&
-                            l.FirstEntryTime == default) // Faqat FirstEntryTime null bo'lganlar
+                            l.FirstEntryTime == default) 
                 .ToListAsync();
 
             return logs;
@@ -55,7 +55,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
 
             var lastCreatedDate = await _context.CurrentAttendanceLogs
                 .Where(log => log.EntryDay.Year == targetYear && log.EntryDay.Month == targetMonthValue)
-                .MaxAsync(log => (DateTime?)log.CreatedAt); // log.CreatedAt - bazaga yozilgan sana
+                .MaxAsync(log => (DateTime?)log.CreatedAt); 
 
             return lastCreatedDate;
         }
@@ -65,7 +65,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         {
             if (logs == null || !logs.Any())
             {
-                // Agar ro'yxat bo'sh bo'lsa, bazaga keraksiz so'rov yubormaymiz
                 return;
             }
 
@@ -140,18 +139,15 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         }
         public async Task<int> GetLateArrivalsForPeriodAsync(long employeeId, DateTime month)
         {
-            // 1. Oyning boshlanish va tugash sanalarini aniqlash (DateTime turida)
             var dateTimeStartDate = new DateTime(month.Year, month.Month, 1);
             var dateTimeEndDate = dateTimeStartDate.AddMonths(1);
 
-            // 2. Filtrlash uchun DateOnly turiga o'tkazish
             var startDate = DateOnly.FromDateTime(dateTimeStartDate);
             var endDate = DateOnly.FromDateTime(dateTimeEndDate);
 
-            // 3. EF Core yordamida bazadan ma'lumotlarni so'rash.
-            var totalUnjustifiedLateMinutes = await _context.CurrentAttendanceLogs // Yoki MonthlyLogs
+            var totalUnjustifiedLateMinutes = await _context.CurrentAttendanceLogs 
                 .Where(log => log.EmployeeId == employeeId &&
-                              // log.EntryDay (DateOnly) endi startDate (DateOnly) bilan solishtirilmoqda
+                           
                               log.EntryDay >= startDate &&
                               log.EntryDay < endDate &&
                               log.IsWorkingDay == true &&
@@ -162,18 +158,21 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         }
         public async Task<int> GetLateArrivalsForDayAsync(long employeeId, DateOnly day)
         {
-          
-            var startDate = day;
-            var totalUnjustifiedLateMinutes = await _context.CurrentAttendanceLogs 
-                .Where(log => log.EmployeeId == employeeId &&
-                              log.EntryDay == startDate &&
-                              log.IsWorkingDay == true &&
-                              log.IsJustified == false)
-                .SumAsync(log => log.LateArrivalMinutes);
-               
+            var logs = await _context.CurrentAttendanceLogs
+                .Where(log => log.EmployeeId == employeeId && log.EntryDay == day)
+                .ToListAsync();
+
+            if (!logs.Any() || logs.All(l => l.FirstEntryTime== default(TimeOnly)))
+            {
+                return -1; 
+            }
+
+            var totalUnjustifiedLateMinutes = logs
+                .Where(log => log.IsWorkingDay == true && log.IsJustified == false)
+                .Sum(log => log.LateArrivalMinutes);
+
             return totalUnjustifiedLateMinutes;
         }
-
 
         public Task<int> SaveChangesAsync()
         {

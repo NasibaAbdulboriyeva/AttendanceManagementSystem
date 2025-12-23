@@ -75,7 +75,6 @@ namespace AttendanceManagementSystem.Application.Services
             {
                 Employee? employee = null;
 
-
                 if (ttUser is TTLockIcCardDto icCardDto)
                 {
 
@@ -107,7 +106,6 @@ namespace AttendanceManagementSystem.Application.Services
                     };
                 }
 
-
                 mapAction(employee, ttUser);
                 if (isNew)
                 {
@@ -123,7 +121,6 @@ namespace AttendanceManagementSystem.Application.Services
 
             return syncedCount;
         }
-
 
         public async Task DeactivateEmployeeAsync(long id)
         {
@@ -269,7 +266,6 @@ namespace AttendanceManagementSystem.Application.Services
             {
                 return null!;
             }
-
 
             return new EmployeeScheduleDto
             {

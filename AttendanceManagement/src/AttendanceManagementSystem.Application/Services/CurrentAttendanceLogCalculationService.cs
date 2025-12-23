@@ -135,60 +135,60 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
 
     public async Task<ICollection<CurrentAttendanceCalendar>> GetAndSaveMonthlyAttendanceCalendarAsync(long employeeId, DateTime month)
     {
-        var startDate = new DateTime(month.Year, 12, 1);
-        int daysInMonth = startDate.AddMonths(1).AddDays(-1).Day;
+        var startDate = new DateTime(month.Year, month.Month, 1); // Oy statik bo'lmasligi kerak (12 ni month.Month ga o'zgartirdim)
+        int daysInMonth = DateTime.DaysInMonth(month.Year, month.Month);
 
         var allExistingLogs = await _attendanceLogRepository.GetLogsByEmployeeAndMonthAsync(employeeId, month);
 
-        var monthlyCalendar = new List<CurrentAttendanceCalendar>();
+        // Tarixiy va joriy jadvallarni olish (Update metodidagidek)
+        var scheduleHistory = await _trackRepository.GetScheduleByDateAndByEmployeeIdAsync(employeeId, DateOnly.FromDateTime(startDate));
+        var currentSchedule = await _employeeRepository.GetScheduleByEmployeeIdAsync(employeeId);
+
+        var allSchedules = (scheduleHistory ?? new List<EmployeeScheduleHistory>())
+            .Select(s => new { s.StartTime, FullDateTime = s.ValidFrom })
+            .Append(new { currentSchedule.StartTime, FullDateTime = currentSchedule.ModifiedAt })
+            .OrderByDescending(s => s.FullDateTime)
+            .ToList();
 
         var dailyLogsGrouped = allExistingLogs
             .GroupBy(log => log.RecordedTime.Date)
-            .ToDictionary(
-                g => g.Key,
-                g => new
-                {
-                    FirstEntry = g.OrderBy(log => log.RecordedTime).First()
-                }
-            );
+            .ToDictionary(g => g.Key, g => g.OrderBy(log => log.RecordedTime).First());
 
-        var existingLogDates = new HashSet<DateOnly>(
-            allExistingLogs
-                .Select(log => DateOnly.FromDateTime(log.RecordedTime.Date))
-        );
-        var schedule = await _employeeRepository.GetScheduleByEmployeeIdAsync(employeeId);
+        var monthlyCalendar = new List<CurrentAttendanceCalendar>();
 
         for (int i = 0; i < daysInMonth; i++)
         {
-            var targetDate = startDate.AddDays(i).Date;
-            var targetDateOnly = DateOnly.FromDateTime(targetDate);
+            var targetDate = startDate.AddDays(i);
+            var targetDayTime = targetDate; // Kunni boshlanishi
 
-            if (dailyLogsGrouped.TryGetValue(targetDate, out var dayLog))
+            // O'sha kunga mos jadvalni topish
+            var applicableSchedule = allSchedules
+                .FirstOrDefault(s => targetDayTime >= s.FullDateTime)
+                ?? allSchedules.LastOrDefault();
+
+            CurrentAttendanceCalendar calendarDto;
+
+            if (dailyLogsGrouped.TryGetValue(targetDate.Date, out var firstEntryLog))
             {
-                var calendarDto = MapToCalendarDto(dayLog.FirstEntry, schedule);
-                calendarDto.CreatedAt = DateTime.Now;
-
-                calendarDto.LateMinutesTotal = CalculateLateMinutes(calendarDto, targetDate);
-                monthlyCalendar.Add(calendarDto);
-
+                calendarDto = MapToCalendarDto(firstEntryLog, currentSchedule); 
+                calendarDto.ScheduledStartTime = applicableSchedule?.StartTime ?? currentSchedule.StartTime;
             }
-
             else
             {
-
-                var defaultLogDto = CreateDefaultCalendarDto(employeeId, targetDate, schedule);
-                defaultLogDto.LateMinutesTotal = CalculateLateMinutes(defaultLogDto, targetDate);
-                monthlyCalendar.Add(defaultLogDto);
+                calendarDto = CreateDefaultCalendarDto(employeeId, targetDate, currentSchedule);
+                calendarDto.ScheduledStartTime = applicableSchedule?.StartTime ?? currentSchedule.StartTime;
             }
+
+            calendarDto.CreatedAt = DateTime.Now;
+            calendarDto.LateMinutesTotal = CalculateLateMinutes(calendarDto, targetDate);
+            monthlyCalendar.Add(calendarDto);
         }
 
         var logsToInsert = monthlyCalendar.Select(dto => MapCalendarDtoToEntity(dto)).ToList();
-
         await _currentAttendanceLogRepository.CreateLogAsync(logsToInsert);
 
         return monthlyCalendar;
     }
-
     public async Task UpdateMonthlyEntryTimesAsync(long employeeId, DateOnly month)
     {
         

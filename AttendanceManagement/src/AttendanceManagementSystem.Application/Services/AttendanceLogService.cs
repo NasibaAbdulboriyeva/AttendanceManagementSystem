@@ -87,6 +87,19 @@ namespace AttendanceManagementSystem.Application.Services
             return logsToSave.Count;
         }
 
+        public async Task<ICollection<AttendanceLog>> GetDailyRawLogsAsync(long employeeId, DateTime date)
+        {
+            var logs = await _logRepository.GetLogsByEmployeeAndDateAsync(employeeId, date);
+
+            // Loglarni DTO-ga o'girish (Mapping)
+            return logs.Select(l => new AttendanceLog
+            {
+              
+                EmployeeId = l.EmployeeId,
+                RecordedTime = l.RecordedTime,
+                // Kerakli boshqa maydonlar
+            }).ToList();
+        }
         private AttendanceLog? MapToAttendanceLog(TTLockRecordDto dto, IReadOnlyDictionary<string, Employee> employeeLookup)
         {
             DateTimeOffset logTimeOffset = DateTimeOffset.FromUnixTimeMilliseconds(dto.LockDate);

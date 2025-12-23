@@ -3,10 +3,9 @@
 @{
     ViewData["Title"] = "Список Сотрудников и Управление Табелями";
     var currentYear = DateTime.Now.Year;
-    var currentMonth = 11;
+    var currentMonth =DateTime.Now.Month;
 }
 
-@* Kiritilgan Style qismini o'zgartirmadim *@
 <style>
     .card-header-actions {
         display: flex;
@@ -20,7 +19,7 @@
         gap: 10px;
         margin-top: 10px;
     }
-    /* ... boshqa stillar ... */
+   
 </style>
 
 <div class="card shadow-sm">
@@ -29,7 +28,6 @@
 
         <div class="mt-3 card-header-actions">
 
-            @* Qaytish Tugmasi *@
             <a asp-controller="AdminAttendance" asp-action="Dashboard" class="btn btn-secondary shadow me-3">
                 <i class="fas fa-arrow-left me-1"></i> Вернуться в панель управления
             </a>
@@ -39,7 +37,7 @@
                
                 <form id="CreateCalendarForm"
                       asp-controller="AdminAttendance"
-                      asp-action="ViewCreateCalendarForAll"
+                      asp-action="SyncCalendarForAll"
                       asp-route-year="@currentYear"
                       asp-route-month="@currentMonth"
                       method="get"
@@ -48,37 +46,21 @@
                     <button type="button"
                             id="ShowCreateModal"
                             class="btn btn-success">
-                        <i class="fas fa-calendar-plus me-1"></i> Создать Календарь (@currentYear-@currentMonth)
+                        <i class="fas fa-calendar-plus me-1"></i> Генерация календаря (@currentYear-@currentMonth)
                     </button>
                 </form>
              
-                @* **'Обновить' tugmasi (ID orqali Modalni chaqiramiz) - Forma yashirin holatda qoladi *@
-                <form id="UpdateCalendarForm"
-                      asp-controller="AdminAttendance"
-                      asp-action="ViewUpdateCalendarForAll"
-                      asp-route-year="@currentYear"
-                      asp-route-month="@currentMonth"
-                      method="get"
-                      class="d-inline">
-
-                    <button type="button"
-                            id="ShowUpdateModal"
-                            class="btn btn-warning text-dark">
-                        <i class="fas fa-sync-alt me-1"></i> Обновить Календарь (@currentYear-@currentMonth)
-                    </button>
-                </form>
             </div>
         </div>
     </div>
 </div>
 
-@* ... Jadval qismi (o'zgartirishsiz) ... *@
 <div class="table-responsive">
     <table class="table table-striped table-hover align-middle">
         <thead class="table-light">
             <tr>
                 <th>ФИО Сотрудника</th>
-                <th style="width: 350px;">Действия</th> @* Kenglikni biroz oshirdik *@
+                <th style="width: 350px;">Действия</th> 
             </tr>
         </thead>
         <tbody>
@@ -89,13 +71,11 @@
                     <td>
                         @{
                             var currentYearForLink = DateTime.Now.Year;
-                            var currentMonthForLink = 11;
+                            var currentMonthForLink = DateTime.Now.Month;
                         }
 
-                        @* Tugmalarni yonma-yon qilish uchun d-flex klassi *@
                         <div class="d-flex gap-2">
 
-                            @* 1. Просмотр табеля *@
                             <a asp-controller="AdminAttendance"
                                asp-action="ViewCalendar"
                                asp-route-username="@employee.FullName"
@@ -105,7 +85,6 @@
                                 <i class="fas fa-eye me-1"></i> Табель
                             </a>
 
-                            @* 2. Логи *@
                             <a asp-controller="AdminAttendance"
                                asp-action="GetDetails"
                                asp-route-username="@employee.FullName"
@@ -123,59 +102,45 @@
     </table>
 </div>
 
-@* ========================================================= *@
-@* 2. Ikkala Modal Strukturasini qo'shish *@
-@* ========================================================= *@
 
 <div class="modal fade" id="CreateConfirmationModal" tabindex="-1" aria-labelledby="CreateConfirmationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="CreateConfirmationModalLabel"><i class="fas fa-calendar-plus me-2"></i> Создание нового табеля</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="CreateConfirmationModalLabel">
+                    <i class="fas fa-sync-alt me-2"></i> Синхронизация табеля
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <p>
-                    <strong class="text-success">ВНИМАНИЕ!</strong>
-                    <br>
-                    Вы уверены, что хотите создать **Табель рабочего времени** для ВСЕХ активных сотрудников на текущий месяц?
+            <div class="modal-body py-4">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-info-circle text-primary fa-3x"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="fw-bold mb-1">Обновление данных за месяц</h6>
+                        <p class="text-muted small mb-0">Система проверит посещаемость для всех активных сотрудников.</p>
+                    </div>
+                </div>
+                
+                <p class="mb-0">
+                    Вы уверены, что хотите запустить <strong>генерацию и обновление</strong> табеля? 
                     <br><br>
-                    <span class="text-danger">Это действие выполняется строго один раз в начале месяца.</span>
+                    <i class="fas fa-check-double text-success me-1"></i> 
+                    <small class="text-secondary">Существующие записи будут обновлены, а недостающие — созданы автоматически.</small>
                 </p>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" id="ConfirmCreateButton" class="btn btn-success">Подтвердить создание</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" id="ConfirmCreateButton" class="btn btn-primary px-4">
+                    <span id="buttonText">Начать синхронизацию</span>
+                    <span id="buttonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="UpdateConfirmationModal" tabindex="-1" aria-labelledby="UpdateConfirmationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title" id="UpdateConfirmationModalLabel"><i class="fas fa-sync-alt me-2"></i> Подтверждение Обновления</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>
-                    <strong class="text-warning">Подтвердите действие:</strong>
-                    <br>
-                    Это действие заполнит все незафиксированные записи о **ПЕРВОМ ВХОДЕ (времени прихода)** для ВСЕХ активных сотрудников за текущий месяц.
-                </p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" id="ConfirmUpdateButton" class="btn btn-warning text-dark">Запустить обработку</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-@* ========================================================= *@
-@* 3. Javascript Mantiqini qo'shish *@
-@* ========================================================= *@
 
 @section Scripts {
     @{
@@ -185,33 +150,26 @@
     <script>
             $(document).ready(function () {
 
-            // BS5 modalni to'g'ri boshqarish uchun
             const createModalElement = document.getElementById('CreateConfirmationModal');
             const updateModalElement = document.getElementById('UpdateConfirmationModal');
 
-            // --- 1. 'Создать' tugmasi mantiqi ---
 
             $('#ShowCreateModal').on('click', function() {
                 new bootstrap.Modal(createModalElement).show();
             });
 
             $('#ConfirmCreateButton').on('click', function() {
-                // Modalni yopish
                 bootstrap.Modal.getInstance(createModalElement).hide();
-                // Forma yuborish
                 $('#CreateCalendarForm').submit();
             });
 
-            // --- 2. 'Обновить' tugmasi mantiqi ---
 
             $('#ShowUpdateModal').on('click', function() {
                 new bootstrap.Modal(updateModalElement).show();
             });
 
             $('#ConfirmUpdateButton').on('click', function() {
-                // Modalni yopish
                 bootstrap.Modal.getInstance(updateModalElement).hide();
-                // Forma yuborish
                 $('#UpdateCalendarForm').submit();
             });
         });

@@ -10,7 +10,7 @@ namespace AttendanceManagementSystem.Application.Abstractions
         Task<ICollection<AttendanceLog>> GetLogsForEmployeeAndPeriodAsync( long employeeId, DateTime startDate,DateTime endDate);
         Task<DateTime?> GetLastRecordedTimeAsync();
         Task<Dictionary<DateOnly, TimeOnly>> GetMonthlyFirstEntryTimesAsync(long employeeId, DateOnly month);
-        
 
-}
+        Task<ICollection<AttendanceLog>> GetLogsByEmployeeAndDateAsync(long employeeId, DateTime date);
+    }
 }

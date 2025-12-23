@@ -1,84 +1,243 @@
 ﻿@{
-    ViewData["Title"] = "Инструкция по Использованию Системы Учета Посещаемости";
+    ViewData["Title"] = "Подробная Инструкция для Администратора";
 }
 
-<div class="container mt-4">
-    <h1 class="text-primary mb-4"><i class="fas fa-book-open me-2"></i> @ViewData["Title"]</h1>
-    <p class="lead">
-        Данная инструкция описывает ключевые шаги по ведению табельного учета в системе.
-    </p>
+<style>
+ 
+    .rocket-animation {
+        display: inline-block;
+        animation: rocketBounce 2s infinite ease-in-out;
+    }
 
-    <hr />
+    .btn-return {
+        border-radius: 50px;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+    }
 
+        .btn-return:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+        }
+    .instruction-wrapper {
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: #2c3e50;
+        line-height: 1.6;
+    }
 
-    <div class="accordion" id="instructionAccordion">
+    .hero-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 60px 40px;
+        margin-bottom: 50px;
+        box-shadow: 0 10px 30px rgba(30, 60, 114, 0.2);
+    }
 
-        <div class="accordion-item shadow-sm mb-3">
-            <h2 class="accordion-header" id="headingOne">
-                <button class="accordion-button bg-light fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                    Шаг 1: Первоначальная Настройка (Редкие Операции)
-                </button>
-            </h2>
-            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#instructionAccordion">
-                <div class="accordion-body">
-                    <ol>
-                        <li><strong>Настройка Графиков:</strong> Перед началом работы убедитесь, что в разделе <a asp-controller="AdminAttendance" asp-action="ScheduleSetup">Рабочие Графики</a> настроены стандартные часы работы и лимиты опозданий.</li>
-                        <li><strong>Синхронизация Сотрудников:</strong> При найме новых сотрудников или первом запуске системы, выполните <a asp-controller="AdminAttendance" asp-action="EmployeeSync">Синхронизацию Данных</a> для получения актуального списка сотрудников из основной базы.</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
+    .section-container {
+        background: #ffffff;
+        border-radius: 15px;
+        padding: 40px;
+        margin-bottom: 40px;
+        border: 1px solid #eef2f7;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
 
-        <div class="accordion-item shadow-sm mb-3">
-            <h2 class="accordion-header" id="headingTwo">
-                <button class="accordion-button collapsed bg-light fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                    Шаг 2: Ежедневные и Ежемесячные Операции
-                </button>
-            </h2>
-            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#instructionAccordion">
-                <div class="accordion-body">
-                    <ul>
-                        <li>
-                            <i class="fas fa-redo-alt text-success me-2"></i> <strong>Ежедневно: Загрузка Лог-Файлов</strong>
-                            <p class="text-muted small">Импортируйте новые логи входов/выходов с устройства учета. Это нужно для актуализации данных о приходе и уходе сотрудников за текущий день.</p>
-                        </li>
-                        <li>
-                            <i class="fas fa-calendar-alt text-info me-2"></i> <strong>Ежемесячно (Начало месяца): Создание Календаря</strong>
-                            <p class="text-muted small">В начале каждого месяца необходимо один раз выполнить операцию <strong>"Расчет Календаря / Обновление"</strong>. Это создаст начальные записи табеля для всех сотрудников на весь месяц.</p>
-                        </li>
-                        <li>
-                            <i class="fas fa-sync-alt text-warning me-2"></i> <strong>Регулярно: Обновление Табеля</strong>
-                            <p class="text-muted small">После первоначального создания, используйте функцию "Обновить Табель" для заполнения пропусков или корректировки записей на основе свежих логов.</p>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+    .btn-label {
+        font-weight: 700;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        display: inline-block;
+        margin-bottom: 15px;
+        letter-spacing: 0.5px;
+    }
 
-        <div class="accordion-item shadow-sm mb-3">
-            <h2 class="accordion-header" id="headingThree">
-                <button class="accordion-button collapsed bg-light fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                    Шаг 3: Формирование Отчетов
-                </button>
-            </h2>
-            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#instructionAccordion">
-                <div class="accordion-body">
-                    <p>Для анализа дисциплины используйте:</p>
-                    <ul>
-                        <li><i class="fas fa-exclamation-triangle text-danger me-2"></i> <strong>Отчет по Опозданиям:</strong><a asp-controller="AdminAttendance" asp-action="LateArrivalsSummary">Отчет по Опозданиям</a> Просмотр суммарного времени опозданий за выбранный период.</li>
-                        <li><strong>Управление Табелями:</strong> Ручная корректировка отдельных записей при необходимости.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+    .step-dot {
+        height: 40px;
+        width: 40px;
+        background-color: #007bff;
+        color: white;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
 
+    .info-list {
+        list-style: none;
+        padding-left: 0;
+    }
+
+        .info-list > li {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 15px;
+        }
+
+            .info-list > li::before {
+                content: "\f058";
+                font-family: "Font Awesome 5 Free";
+                font-weight: 900;
+                position: absolute;
+                left: 0;
+                color: #28a745;
+            }
+
+    .accent-card {
+        border-left: 5px solid #007bff;
+        background: #f8fbff;
+        padding: 25px;
+        border-radius: 0 12px 12px 0;
+        margin-bottom: 25px;
+    }
+
+    .warning-box {
+        background: #fff5f5;
+        border-left: 5px solid #e74c3c;
+        padding: 20px;
+        border-radius: 0 12px 12px 0;
+        margin: 20px 0;
+    }
+
+    .sub-title {
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+</style>
+
+<div class="container instruction-wrapper py-5">
+
+    <div class="hero-section text-center">
+        <h1 class="display-4 font-weight-bold mb-3"><i class="fas fa-shield-alt mr-3"></i> Система Учета Посещаемости</h1>
+        <p class="lead opacity-75">Пошаговое руководство по контролю дисциплины и управлению данными табеля</p>
     </div>
 
-    <div class="alert alert-info mt-4" role="alert">
-        <i class="fas fa-lightbulb me-2"></i>  Все ключевые операции доступны на главной <a asp-controller="AdminAttendance" asp-action="Dashboard">Админ-Панели Учета</a>.
-    </div>
+    <section class="section-container">
+        <h2 class="mb-5 text-primary d-flex align-items-center">
+            <span class="step-dot">1</span> Главная Панель: Управление Данными
+        </h2>
 
+        <div class="accent-card">
+            <span class="btn-label bg-primary text-white">1. ЗАГРУЗИТЬ ЛОГИ</span>
+            <div class="mt-2">
+                <p class="font-weight-bold mb-2">Функция: Синхронизация данных с облачной системой TTLock.</p>
+                <ul class="info-list">
+                    <li><strong>Процесс:</strong> При активации система обращается к API TTLock и подтягивает новые события проходов.</li>
+                    <li><strong>Инкрементальная логика:</strong> Для исключения дубликатов система анализирует время последнего входа в базе, добавляет <strong>+2 секунды</strong> и запрашивает данные строго после этого маркера.</li>
+                    <li><strong>Надежность:</strong> Это гарантирует, что каждый лог будет записан только один раз, а база данных будет содержать только свежую информацию.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="accent-card" style="border-left-color: #17a2b8; background: #f4fcfe;">
+            <span class="btn-label bg-info text-white">2. РАСЧЕТ КАЛЕНДАРЯ / СОЗДАНИЕ ТАБЕЛИ </span>
+            <div class="mt-2">
+                <p class="font-weight-bold mb-2">Функция: Инициализация структуры табеля и первичная обработка.</p>
+                <ul class="info-list">
+                    <li><strong>Генерация периода:</strong> Формируется полная база записей для каждого сотрудника на все 30/31 день месяца.</li>
+                    <li><strong>Первичное заполнение:</strong> Система сканирует базу на наличие логов. Если <strong>First Entry</strong> (первый вход) найден, он фиксируется в сетке. В случае отсутствия данных — устанавливается значение <strong>00:00 (дефолт)</strong>.</li>
+                    <li><strong>Приоритет:</strong> Создание сетки является первичным действием. Расчет минут опозданий происходит после выполнения команды «Обновить».</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="accent-card" style="border-left-color: #6c757d; background: #fdfdfd;">
+            <span class="btn-label bg-secondary text-white">3. ЕЖЕДНЕВНЫЙ ОТЧЕТ</span>
+            <div class="mt-2">
+                <p class="font-weight-bold mb-2">Функция: Оперативный контроль присутствия в реальном времени.</p>
+                <ul class="info-list">
+                    <li><strong>Мониторинг:</strong> Позволяет видеть текущую ситуацию в офисе: кто уже на месте, а кто еще не отметился в системе TTLock.</li>
+                    <li>
+                        <strong>Автоматическая классификация:</strong>
+                        <div class="row mt-2">
+                            <div class="col-md-4"><span class="text-success font-weight-bold">● Вовремя:</span> Вход до начала смены.</div>
+                            <div class="col-md-4"><span class="text-danger font-weight-bold">● Опоздали:</span> Вход с нарушением графика.</div>
+                            <div class="col-md-4"><span class="text-warning font-weight-bold">● Отсутствуют:</span> Логи за день не найдены.</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-container">
+        <h2 class="mb-5 text-success d-flex align-items-center">
+            <span class="step-dot bg-success">2</span> Редактирование и Актуализация
+        </h2>
+
+        <div class="warning-box">
+            <h5 class="font-weight-bold text-danger"><i class="fas fa-exclamation-circle mr-2"></i> КРИТИЧЕСКИЙ ЭТАП</h5>
+            <p class="mb-0">Ежемесячно, строго 1-го числа, используйте функцию <strong>"Создать Календарь"</strong>. Без инициализации сетки внесение данных и расчет опозданий за новый месяц будут невозможны.</p>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="p-3 border-bottom">
+                    <div class="sub-title"><i class="fas fa-sync-alt text-warning mr-2"></i> Обновить Календарь</div>
+                    <p class="text-muted small">Главный инструмент пересчета. Актуализирует все записи в табеле на основе вновь загруженных логов из TTLock.</p>
+                </div>
+                <div class="p-3 border-bottom">
+                    <div class="sub-title"><i class="fas fa-edit text-info mr-2"></i> Кнопка "Табель"</div>
+                    <p class="text-muted small">Индивидуальная настройка. Позволяет администратору вручную оправдать опоздание (Justified), если сотрудник предоставил документ или был в командировке.</p>
+                </div>
+                <div class="p-3">
+                    <div class="sub-title"><i class="fas fa-shoe-prints text-dark mr-2"></i> Все входы</div>
+                    <p class="text-muted small">Архив перемещений. Отображает полную хронологию всех касаний устройства сотрудником в течение рабочего дня.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-container border-top" style="border-top: 5px solid #dc3545 !important;">
+        <h2 class="mb-5 text-danger d-flex align-items-center">
+            <span class="step-dot bg-danger">3</span> Системные Настройки
+        </h2>
+
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <h6 class="font-weight-bold"><i class="fas fa-chart-pie mr-2"></i> Отчетность</h6>
+                <p class="small text-muted">Сводный месячный отчет. Генерирует финальные цифры по всем сотрудникам для передачи в финансовый отдел или бухгалтерию.</p>
+            </div>
+            <div class="col-md-4 mb-4">
+                <h6 class="font-weight-bold"><i class="fas fa-clock mr-2"></i> Рабочие Графики</h6>
+                <p class="small text-muted">Конфигурация эталонного времени. Установка часа начала смены. Помните: некорректный график ведет к глобальным ошибкам в расчете всей базы.</p>
+            </div>
+            <div class="col-md-4 mb-4">
+                <h6 class="font-weight-bold"><i class="fas fa-link mr-2"></i> Синхронизация</h6>
+                <p class="small text-muted">Связующее звено. Сопоставляет уникальный ID устройства доступа с персональными данными сотрудника в информационной системе.</p>
+            </div>
+        </div>
+    </section>
+    <div class="text-center mt-5 pt-5 border-top">
+        <div class="mb-4">
+            <span class="rocket-animation">
+                <i class="fas fa-rocket fa-3x text-primary"></i>
+            </span>
+        </div>
+        <h3 class="font-weight-bold">Поздравляю, вы в теме!</h3>
+        <p class="text-muted mx-auto" style="max-width: 600px;">
+            Теперь вы знаете все тонкости работы системы. Осталось синхронизировать логи,
+            проверить табели и сформировать отчеты. Пора действовать!!!
+        </p>
+
+        <div class="mt-4">
+            <a asp-controller="AdminAttendance" asp-action="Dashboard" class="btn btn-primary btn-lg px-5 btn-return">
+                <i class="fas fa-arrow-left mr-2"></i> Вернуться к управлению
+            </a>
+        </div>
+
+        <div class="mt-5 text-secondary">
+            <small>
+                <i class="fas fa-question-circle mr-1"></i>
+                Забыли какой-то шаг? Просто пролистайте страницу вверх.
+            </small>
+        </div>
+    </div>
 </div>
-
-@section Scripts {
-}

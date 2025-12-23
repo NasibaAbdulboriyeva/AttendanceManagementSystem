@@ -41,6 +41,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
                 .OrderByDescending(x => x.ValidFrom)
                 .ToListAsync();
         }
+
     }
 
 }

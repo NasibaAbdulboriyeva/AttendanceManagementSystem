@@ -21,10 +21,17 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             _context.AttendanceLogs.AddRange(logs);
             await _context.SaveChangesAsync();
         }
-
+        public async Task<ICollection<AttendanceLog>> GetLogsByEmployeeAndDateAsync(long employeeId, DateTime date)
+        {
+            
+            return await _context.AttendanceLogs
+                .Where(l => l.EmployeeId == employeeId && l.RecordedTime.Date == date.Date)
+                .OrderBy(l => l.RecordedTime)
+                .ToListAsync();
+        }
         public async Task<ICollection<AttendanceLog>> GetLogsByEmployeeAndMonthAsync(long employeeId, DateTime month)
         {
-            // 1. Oyning boshlanish va tugash sanalarini hisoblash
+           
             var startDate = new DateTime(month.Year, month.Month, 1);
             var endDate = startDate.AddMonths(1);
 
@@ -40,16 +47,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
 
             return logs;
         }
-        public async Task<ICollection<AttendanceLog>> GetLogsByEmployeeICCodeAsync(string code, DateTime startDate, DateTime endDate)
-        {
-            return await _context.AttendanceLogs
-               .AsNoTracking()
-               .Where(log => /*log.Employee.Code == code &&*/
-                             log.RecordedTime.Date >= startDate.Date &&
-                             log.RecordedTime.Date <= endDate.Date)
-               .OrderBy(log => log.RecordedTime)
-               .ToListAsync();
-        }
+     
         public async Task<ICollection<AttendanceLog>> GetLogsForAllEmployeesByDayAsync(DateTime targetDate)
         {
             return await _context.AttendanceLogs
@@ -90,27 +88,24 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         }
         public async Task<Dictionary<DateOnly, TimeOnly>> GetMonthlyFirstEntryTimesAsync(long employeeId, DateOnly month)
         {
-            // Oydagi birinchi va oxirgi sanani aniqlash
             var startDate = new DateTime(month.Year, month.Month, 1);
             var endDate = startDate.AddMonths(1).AddDays(-1);
 
-            // 1. Shu oy uchun barcha Attendance Log'larni yuklash
-            // Biz DateTime RecordedTime ni ishlatyapmiz, chunki DateOnly ni DbContextda bevosita ishlatish qiyin bo'lishi mumkin.
             var allMonthlyLogs = await _context.AttendanceLogs
                 .Where(log => log.EmployeeId == employeeId &&
                               log.RecordedTime.Date >= startDate.Date &&
                               log.RecordedTime.Date <= endDate.Date)
                 .ToListAsync();
 
-            // 2. Loglarni kun bo'yicha guruhlash va eng birinchi vaqtni tanlash
+          
             var firstEntryTimes = allMonthlyLogs
-                .GroupBy(log => DateOnly.FromDateTime(log.RecordedTime.Date)) // RecordedTime'ning sanasi bo'yicha guruhlash
+                .GroupBy(log => DateOnly.FromDateTime(log.RecordedTime.Date)) 
                 .ToDictionary(
-                    g => g.Key, // Kun (DateOnly)
-                    g => TimeOnly.FromDateTime(g.OrderBy(log => log.RecordedTime).First().RecordedTime) // Eng birinchi kirish vaqti (TimeOnly)
+                    g => g.Key, 
+                    g => TimeOnly.FromDateTime(g.OrderBy(log => log.RecordedTime).First().RecordedTime) 
                 );
 
-            // TimeOnly? ga moslash uchun Dictionary<DateOnly, TimeOnly?> bo'lib qaytadi.
+          
             return firstEntryTimes;
 
         }

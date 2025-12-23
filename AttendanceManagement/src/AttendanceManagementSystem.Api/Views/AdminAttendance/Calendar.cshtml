@@ -5,7 +5,26 @@
 
     string FormatTime(TimeOnly time) => time.ToString("HH:mm");
 }
-
+<div class="modal fade" id="logDetailsModal" tabindex="-1" aria-labelledby="logDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="logDetailsModalLabel border-0">
+                    <i class="fas fa-clock me-2"></i> Детали посещений
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="modal-loading" class="text-center my-4" style="display:none;">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2 text-muted">Загрузка данных...</p>
+                </div>
+                <div id="modal-content-area">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="card shadow mb-4">
     <div class="card-header py-3">
         <h2 class="m-0 font-weight-bold text-primary">
@@ -73,7 +92,16 @@
                             data-is-justified="@dayLog.IsJustified.ToString().ToLower()"
                             data-is-working-day="@dayLog.IsWorkingDay.ToString().ToLower()">
 
-                            <td>@dayLog.EntryDay.ToString("dd.MM")</td>
+                            @* Avvalgi kod: <td>@dayLog.EntryDay.ToString("dd.MM")</td> *@
+
+                            <td class="text-center font-weight-bold">
+                                <a href="javascript:void(0)"
+                                   class="view-daily-logs text-primary text-decoration-none"
+                                   data-employee-id="@dayLog.EmployeeId"
+                                   data-date="@dayLog.EntryDay.ToString("yyyy-MM-dd")">
+                                    @dayLog.EntryDay.ToString("dd.MM")
+                                </a>
+                            </td>
 
                             <td class="text-center working-day-cell">
                                 <div class="form-check form-switch d-flex align-items-center justify-content-center">
@@ -210,7 +238,6 @@
                     statusSpan.html(`осталось ${remainingLate} минут`);
                 }
             }
-
 
         $(document).ready(function () {
             
@@ -456,6 +483,58 @@
             });
 
             updateMonthlySummary();
+        });
+
+        $('.view-daily-logs').on('click', function () {
+            const employeeId = $(this).data('employee-id');
+            const date = $(this).data('date');
+            const modal = new bootstrap.Modal(document.getElementById('logDetailsModal'));
+
+            $('#modal-content-area').html('');
+            $('#modal-loading').show();
+            modal.show();
+
+            $.ajax({
+                url: '/AdminAttendance/GetDailyRawLogs', // Controllerdagi yangi metod manzili
+                type: 'GET',
+                data: { employeeId: employeeId, date: date },
+                success: function (data) {
+                    $('#modal-loading').hide();
+
+                    // Jadval ko'rinishida chiqarish
+                    let html = `
+                        <div class="p-3 bg-light border-bottom">
+                            <strong>Дата:</strong> ${date}
+                        </div>
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light small uppercase">
+                                <tr>
+                                    <th class="ps-3">Время записи</th>
+                                    <th>Тип</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+                    if (data.length === 0) {
+                        html += `<tr><td colspan="2" class="text-center py-4 text-muted">Записи не найдены</td></tr>`;
+                    } else {
+                        data.forEach(log => {
+                            html += `
+                                <tr>
+                                    <td class="ps-3 fw-bold text-dark">${log.recordedTime}</td>
+                                    <td><span class="badge bg-info">Check</span></td>
+                                </tr>`;
+                        });
+                    }
+
+                    html += `</tbody></table>`;
+                    $('#modal-content-area').html(html);
+                },
+                error: function () {
+                    $('#modal-loading').hide();
+                    $('#modal-content-area').html('<div class="alert alert-danger m-3">Ошибка при загрузке данных</div>');
+                }
+            });
         });
     </script>
 }
