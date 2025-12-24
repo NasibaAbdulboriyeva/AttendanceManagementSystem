@@ -14,7 +14,6 @@ namespace AttendanceManagementSystem.Api
             builder.ConfigureDB();
             builder.ConfigureDI();
 
-
            builder.Services.AddAuthentication("Cookies")
           .AddCookie("Cookies", options =>
            {
@@ -33,7 +32,6 @@ namespace AttendanceManagementSystem.Api
                 {
                     var tokenService = services.GetRequiredService<ITTLockService>();
                     await tokenService.InitializeTokensFromConfigAsync();
-
                    
                 }
                 catch (Exception ex)

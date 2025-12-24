@@ -111,7 +111,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             return await RefreshAndSaveTokenAsync(tokenRecord);
         }
 
-        // 1.3. Tokenni yangilash (Refresh) mantiqi
         private async Task<string> RefreshAndSaveTokenAsync(TTLockSettings oldRecord)
         {
             await _refreshLock.WaitAsync();
@@ -124,7 +123,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
                     return latestTokenRecord.AccessToken;
                 }
 
-                // 2. Refresh API chaqiruvi (TTLock serveriga)
                 var newTokens = await CallTtlockRefreshApiAsync(latestTokenRecord.RefreshToken);
 
                 if (newTokens.access_token != null && newTokens.refresh_token != null)
@@ -137,8 +135,9 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
                     _logger.LogInformation("TTLock Access Token успешно обновлен.");
 
                 }
-                return latestTokenRecord.AccessToken;
 
+                return latestTokenRecord.AccessToken;
+                  
             }
             catch (Exception ex)
             {
@@ -151,22 +150,18 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             }
         }
 
-        // 1.4. Refresh API chaqiruvi uchun yordamchi metod (ITTlockRefreshApiService dan olingan)
         private async Task<TTLockApiTokenResponse> CallTtlockRefreshApiAsync(string currentRefreshToken)
         {
             var url = "https://euapi.ttlock.com/oauth2/token";
 
-            // So'rov rasmga (curl) mos kelishi uchun x-www-form-urlencoded formatida tayyorlanadi.
             var formContent = new FormUrlEncodedContent(new[]
             {
-        // Rasmda ko'rsatilgan barcha maydonlar
              new KeyValuePair<string, string>("clientId", _settings.ClientId),
              new KeyValuePair<string, string>("clientSecret", _settings.ClientSecret),
              new KeyValuePair<string, string>("grant_type", "refresh_token"),
              new KeyValuePair<string, string>("refresh_token", currentRefreshToken)
             });
 
-            // 1. So'rovni yuborish
             var response = await _httpClient.PostAsync(url, formContent);
 
             if (!response.IsSuccessStatusCode)
@@ -184,7 +179,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
 
             return tokenResponse;
         }
-
 
         private async Task<TTLockResponse?> GetLockRecordsPageAsync(long startDate, long endDate, int pageNo, int pageSize, int? recordType)
         {
@@ -226,7 +220,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             }
         }
 
-
         public async Task<ICollection<TTLockIcCardDto>> GetAllIcCardRecordsAsync(string? searchStr = null, int orderBy = 1)
         {
             const string endpoint = "identityCard/list";
@@ -241,7 +234,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             {
                 long dateTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 var accessToken = await GetAccessTokenAsync();
-
 
                 var url = $"https://euapi.ttlock.com/v3/" + $"{endpoint}?" +
                           $"clientId={_settings.ClientId}&" +
@@ -286,7 +278,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
                     break;
                 }
             }
-
+        
             _logger.LogInformation("Всего получено {Count} записей для TTLock IC-карт.", allRecords.Count);
             return allRecords;
         }
@@ -345,6 +337,7 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
                         break;
                     }
                 }
+                
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Произошла ошибка при вызове TTLock Fingerprint API (Страница {PageNo})", pageNo);
@@ -356,4 +349,5 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Gateway
             return allRecords;
         }
     }
+
 }

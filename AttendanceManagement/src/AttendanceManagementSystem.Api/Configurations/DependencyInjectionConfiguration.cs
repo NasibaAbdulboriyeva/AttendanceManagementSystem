@@ -37,6 +37,9 @@ namespace AttendanceManagementSystem.Api.Configurations
             builder.Services.AddHttpClient<ITTLockService, TTLockService>();
             builder.Services.Configure<TTLockSettings>(
             builder.Configuration.GetSection("TTLockApiSettings"));
+            builder.Services.Configure<AttendanceSettings>(
+            builder.Configuration.GetSection("AttendanceSettings"));
+
 
         }
     }

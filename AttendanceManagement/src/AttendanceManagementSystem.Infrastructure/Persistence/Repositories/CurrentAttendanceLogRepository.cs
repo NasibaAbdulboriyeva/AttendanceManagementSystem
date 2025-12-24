@@ -12,7 +12,18 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         {
             _context = context;
         }
+        public async Task<ICollection<CurrentAttendanceLog>> GetLogsByEmployeeIdByMonthAsync(long employeeId, DateOnly month)
+        {
+            var startDate = new DateOnly(month.Year, month.Month, 1);
+            var nextMonthFirstDay = startDate.AddMonths(1);
 
+            return await _context.CurrentAttendanceLogs
+                .Where(log => log.EmployeeId == employeeId &&
+                              log.EntryDay >= startDate &&
+                              log.EntryDay < nextMonthFirstDay)
+                .OrderBy(log => log.EntryDay) 
+                .ToListAsync();
+        }
         public async Task<ICollection<CurrentAttendanceLog>> CreateLogAsync(ICollection<CurrentAttendanceLog> logs)
         {
             if (logs == null || !logs.Any())
@@ -39,7 +50,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         }
         public async Task<bool> HasMonthlyAttendanceLogs(DateTime month)
         {
-            // Oyning boshlanishi va oxirini aniqlash
             var startOfMonth = new DateTime(month.Year, month.Month, 1);
             var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
 
@@ -48,18 +58,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
                 .AnyAsync(log => log.CreatedAt >= startOfMonth && log.CreatedAt <= endOfMonth);
             return exists;
         }
-        public async Task<DateTime?> GetLastAttendanceLogDateAsync(DateTime targetMonth)
-        {
-            var targetYear = targetMonth.Year;
-            var targetMonthValue = 11;
-
-            var lastCreatedDate = await _context.CurrentAttendanceLogs
-                .Where(log => log.EntryDay.Year == targetYear && log.EntryDay.Month == targetMonthValue)
-                .MaxAsync(log => (DateTime?)log.CreatedAt); 
-
-            return lastCreatedDate;
-        }
-
 
         public async Task UpdateRangeAsync(IEnumerable<CurrentAttendanceLog> logs)
         {
@@ -72,26 +70,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
 
            
             await _context.SaveChangesAsync();
-        }
-        public async Task DeleteMonthlyLogsAsync(long employeeId, DateTime month)
-        {
-            var startDate = new DateTime(month.Year, 12, 1);
-
-            var logsToDelete = await _context.CurrentAttendanceLogs
-                .Where(l => l.EmployeeId == employeeId &&
-                l.EntryDay.Year == startDate.Year &&
-                l.EntryDay.Month == startDate.Month)
-            .ToListAsync();
-
-            _context.CurrentAttendanceLogs.RemoveRange(logsToDelete);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<CurrentAttendanceLog> GetLogByIdAsync(long id)
-        {
-            var log = await _context.CurrentAttendanceLogs
-                                 .FirstOrDefaultAsync(log => log.CurrentAttendanceLogId == id);
-            return log;
         }
 
         public async Task<ICollection<CurrentAttendanceLog>> GetAllLogsAsync()
@@ -117,15 +95,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             return log;
         }
 
-        public async Task DeleteLogAsync(long id)
-        {
-            var log = await _context.CurrentAttendanceLogs.FindAsync(id);
-            if (log != null)
-            {
-                _context.CurrentAttendanceLogs.Remove(log);
-                await _context.SaveChangesAsync();
-            }
-        }
         public async Task<CurrentAttendanceLog> GetLogByEmployeeIdAndEntryDayAsync(long employeeId, DateOnly entryDay)
         {
             var targetDate = entryDay;

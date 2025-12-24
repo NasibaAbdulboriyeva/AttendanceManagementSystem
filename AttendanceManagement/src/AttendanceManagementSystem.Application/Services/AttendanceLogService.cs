@@ -91,15 +91,14 @@ namespace AttendanceManagementSystem.Application.Services
         {
             var logs = await _logRepository.GetLogsByEmployeeAndDateAsync(employeeId, date);
 
-            // Loglarni DTO-ga o'girish (Mapping)
             return logs.Select(l => new AttendanceLog
             {
               
                 EmployeeId = l.EmployeeId,
                 RecordedTime = l.RecordedTime,
-                // Kerakli boshqa maydonlar
             }).ToList();
         }
+
         private AttendanceLog? MapToAttendanceLog(TTLockRecordDto dto, IReadOnlyDictionary<string, Employee> employeeLookup)
         {
             DateTimeOffset logTimeOffset = DateTimeOffset.FromUnixTimeMilliseconds(dto.LockDate);

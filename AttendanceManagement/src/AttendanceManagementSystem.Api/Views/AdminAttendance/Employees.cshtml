@@ -4,32 +4,29 @@
     ViewData["Title"] = "Список Активных Сотрудников";
 }
 <style>
-    /* 1. Asosiy Rang Sxemasi - YANGILANDI (Mint Green) */
+   
     :root {
-        --corporate-color: #66bb6a; /* Mint Green (Och Yashil) - Header va Primary uchun */
-        --corporate-dark: #388e3c; /* To'q Yashil - Hover va Text uchun */
+        --corporate-color: #66bb6a; 
+        --corporate-dark: #388e3c; 
         --light-grey-bg: #f8f9fa;
         --border-color: #e0e0e0;
     }
 
-    /* 2. Card va Umumiy Ko'rinish */
     .employee-card {
         margin-top: 30px;
         border-radius: 0.75rem;
         border: 1px solid var(--border-color);
-        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05); /* Yumshoq soya */
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05); 
         overflow: hidden;
     }
 
-    /* 3. Card Header - YANGILANDI */
     .card-header-custom {
-        background-color: var(--corporate-color); /* Och Yashil fon */
-        color: white; /* Oq matn */
+        background-color: var(--corporate-color); 
+        color: white; 
         padding: 1rem 1.5rem;
         border-bottom: none;
     }
 
-    /* 4. Jadval Uslubi */
     .table-striped > tbody > tr:nth-of-type(odd) {
         background-color: var(--light-grey-bg);
     }
@@ -42,7 +39,6 @@
         min-width: 180px;
     }
 
-    /* 5. Qaytish Tugmasi - YANGILANDI */
     .btn-return-custom {
         background-color: transparent;
         color: white;
@@ -52,7 +48,7 @@
 
     .btn-return-custom:hover {
         background-color: white;
-        color: var(--corporate-dark); /* Teskari rang - To'q Yashil */
+        color: var(--corporate-dark);
     }
 </style>
 
@@ -61,7 +57,6 @@
     <div class="card-header-custom d-flex justify-content-between align-items-center">
         <h3 class="card-title mb-0"> 🔑Список Активных Сотрудников</h3>
 
-        @* Boshqaruv paneliga qaytish tugmasi *@
         <a asp-controller="AdminAttendance" asp-action="Dashboard" class="btn btn-sm btn-return-custom shadow-sm">
             <i class="fas fa-arrow-left me-1"></i> Вернуться в панель управления
         </a>
@@ -93,7 +88,6 @@
                                 </td>
 
                                 <td class="action-cell">
-                                    @* ⭐ O'zgartirilgan tugma: onclick olib tashlandi, data atributlari qo'shildi *@
                                     <button type="button"
                                             class="btn btn-danger btn-sm deactivate-btn"
                                             data-bs-toggle="modal"
@@ -113,10 +107,6 @@
 </div>
 
 
-@* ========================================================= *@
-@* 2. Deaktivatsiya Modal Strukturasini qo'shish *@
-@* ========================================================= *@
-
 <div class="modal fade" id="DeactivationConfirmationModal" tabindex="-1" aria-labelledby="DeactivationConfirmationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -130,7 +120,6 @@
                     <br><br>
                     Это действие **безвозвратно** удалит его из списка активных сотрудников .
                 </p>
-                @* Forma yo'naltirish uchun yashirin maydon *@
                 <form id="DeactivateForm" asp-controller="AdminAttendance" asp-action="Inactivate" method="get">
                     <input type="hidden" id="deactivateUsernameInput" name="username" value="" />
                 </form>
@@ -143,9 +132,7 @@
     </div>
 </div>
 
-@* ========================================================= *@
-@* 3. Javascript Mantiqini qo'shish *@
-@* ========================================================= *@
+
 
 @section Scripts {
     @{
@@ -156,26 +143,19 @@
         $(document).ready(function () {
             const modalElement = document.getElementById('DeactivationConfirmationModal');
 
-            // 1. Modal ochilishidan avval username'ni modal ichiga yozish
             modalElement.addEventListener('show.bs.modal', function (event) {
-                // Modalni chaqirgan tugma topiladi
                 const button = event.relatedTarget;
 
-                // data-username atributidan xodimning FIOsi olinadi
                 const username = button.getAttribute('data-username');
 
-                // Modal ichidagi username ko'rsatiladigan joylar yangilanadi
                 document.getElementById('employeeNameSpan').textContent = username;
                 document.getElementById('deactivateUsernameInput').value = username;
             });
 
-            // 2. Modal ichidagi "Подтвердить" tugmasi bosilganda formani yuborish
             $('#ConfirmDeactivateButton').on('click', function () {
-                // Modal yopiladi
                 const modalInstance = bootstrap.Modal.getInstance(modalElement);
                 modalInstance.hide();
 
-                // Yashirin formani submit qilish
                 $('#DeactivateForm').submit();
             });
         });

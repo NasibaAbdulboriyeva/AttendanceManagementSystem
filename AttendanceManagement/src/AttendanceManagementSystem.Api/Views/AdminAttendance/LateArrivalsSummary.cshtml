@@ -11,7 +11,7 @@
 <div class="card shadow mb-4">
     <div class="card-header py-3">
         <h2 style="color: green; margin: 0; font-weight: bold;">Общий ежемесячный отчет по опозданиям и сверх лимита</h2>
-        <p style="color: #6c757d;">Общий лимит опозданий: 80 минут</p>
+        <p style="color: #6c757d;">Общий лимит опозданий: @Model.MonthlyLimit минут</p>
     </div>
     <div class="card-body">
 
@@ -42,11 +42,11 @@
                     @foreach (var employee in Model.Employees)
                     {
                         var lateMinutes = employee.TotalLateMinutes;
-                        const int monthlyLimit = 80;
-                        var isOverLimit = lateMinutes > monthlyLimit;
+
+                        var isOverLimit = lateMinutes > @Model.MonthlyLimit;
 
                         // ✅ Limitdan oshgan minutlarni hisoblash
-                        var sverhLimitMinutes = isOverLimit ? (lateMinutes - monthlyLimit) : 0;
+                        var sverhLimitMinutes = isOverLimit ? (lateMinutes - @Model.MonthlyLimit) : 0;
 
                         // Limitdan oshgan holat uchun INLINE STYLE yaratish
                         string styleForLateMinutes = "";

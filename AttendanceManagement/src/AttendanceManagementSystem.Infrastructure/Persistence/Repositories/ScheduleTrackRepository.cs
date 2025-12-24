@@ -33,14 +33,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             return histories;
         }
 
-        public async Task<ICollection<EmployeeScheduleHistory>> GetScheduleHistoryByEmployeeIdAsync(long employeeId)
-        {
-            return await _context.EmployeeScheduleHistories
-                .AsNoTracking()
-                .Where(x => x.EmployeeId == employeeId)
-                .OrderByDescending(x => x.ValidFrom)
-                .ToListAsync();
-        }
 
     }
 

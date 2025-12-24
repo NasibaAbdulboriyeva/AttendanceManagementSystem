@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace AttendanceManagementSystem.Infrastructure.Persistence.EntityConfigurations
 {
     public class EmployeeScheduleHistoryConfiguration : IEntityTypeConfiguration<EmployeeScheduleHistory>

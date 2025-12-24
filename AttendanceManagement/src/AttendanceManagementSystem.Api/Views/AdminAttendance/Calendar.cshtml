@@ -40,7 +40,7 @@
             .Sum(l => l.LateMinutesTotal);
 
             var totalUnjustifiedLate = unjustifiedLate;
-            var remainingLate = 80 - totalUnjustifiedLate;
+            var remainingLate = Model.TotalUnjustifiedLates;
         }
         <div class="alert alert-info">
             <p>
@@ -48,7 +48,7 @@
                 <span id="monthly-total-late">@totalUnjustifiedLate</span> минут
             </p>
             <p>
-                <strong>Остаток лимита (80 min):</strong>
+                <strong>Остаток лимита (@Model.DefaultLimit min):</strong>
                 @if (remainingLate < 0)
                 {
                     <span class="text-danger font-weight-bold" id="monthly-remaining-late-status">
@@ -92,7 +92,6 @@
                             data-is-justified="@dayLog.IsJustified.ToString().ToLower()"
                             data-is-working-day="@dayLog.IsWorkingDay.ToString().ToLower()">
 
-                            @* Avvalgi kod: <td>@dayLog.EntryDay.ToString("dd.MM")</td> *@
 
                             <td class="text-center font-weight-bold">
                                 <a href="javascript:void(0)"
@@ -196,8 +195,6 @@
     <script>
         $(document).ready(function () {
 
-            const MONTHLY_LIMIT = 80;
-
             function showFeedback(element, isSuccess) {
                 element.removeClass('is-valid is-invalid');
                 if (isSuccess) {
@@ -223,7 +220,7 @@
                     }
                 });
 
-                const remainingLate = MONTHLY_LIMIT - totalUnjustifiedLate;
+                const remainingLate = @Model.DefaultLimit - totalUnjustifiedLate;
                 const statusSpan = $('#monthly-remaining-late-status');
                 const totalLateSpan = $('#monthly-total-late');
 
@@ -239,30 +236,7 @@
                 }
             }
 
-        $(document).ready(function () {
-            
-            // Elementlarning sahifada mavjudligini tekshirish
-            if ($('#set-working-day-on').length === 0) {
-                 console.error("Global Set Working Day ON tugmasi topilmadi!");
-                 return;
-            }
-
-
-            // Tugmalarning asl HTML tarkibini saqlash
-            $('#set-working-day-on').data('original-html', $('#set-working-day-on').html());
-            $('#set-working-day-off').data('original-html', $('#set-working-day-off').html());
-
-
-            $('#set-working-day-on, #set-working-day-off').on('click', function () {
-                const button = $(this);
-                // data-status atributining qiymatini to'g'ri olish (boolean)
-                const newStatus = button.data('status') === true || button.data('status') === 'true'; 
-                const targetDay = $('#target-date-global').val();
-
-                setGlobalWorkingDayStatus(targetDay, newStatus, button);
-            });
-        });
- 
+       
 
             $('.working-day-checkbox').on('change', function () {
                 var checkbox = $(this);
@@ -279,9 +253,9 @@
                 const visualIcon = row.find('.working-day-visual-icon');
                 visualIcon.removeClass('text-success text-secondary');
                 if (isChecked) {
-                    visualIcon.addClass('text-primary').text(' ON'); // YANGILANGAN: ON matni
+                    visualIcon.addClass('text-primary').text(' ON'); 
                 } else {
-                    visualIcon.addClass('text-muted').text(' OFF'); // YANGILANGAN: OFF matni
+                    visualIcon.addClass('text-muted').text(' OFF'); 
                 }
 
                 $.ajax({
@@ -495,13 +469,13 @@
             modal.show();
 
             $.ajax({
-                url: '/AdminAttendance/GetDailyRawLogs', // Controllerdagi yangi metod manzili
+                url: '/AdminAttendance/GetDailyRawLogs', 
                 type: 'GET',
                 data: { employeeId: employeeId, date: date },
                 success: function (data) {
                     $('#modal-loading').hide();
 
-                    // Jadval ko'rinishida chiqarish
+                   
                     let html = `
                         <div class="p-3 bg-light border-bottom">
                             <strong>Дата:</strong> ${date}

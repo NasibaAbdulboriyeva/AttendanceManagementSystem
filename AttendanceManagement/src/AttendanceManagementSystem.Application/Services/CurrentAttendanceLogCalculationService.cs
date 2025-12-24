@@ -1,6 +1,8 @@
 ﻿using AttendanceManagementSystem.Application.Abstractions;
 using AttendanceManagementSystem.Application.DTOs;
 using AttendanceManagementSystem.Domain.Entities;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 namespace AttendanceManagementSystem.Application.Services;
 
 public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalculationService
@@ -9,13 +11,40 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
     private readonly IAttendanceLogRepository _attendanceLogRepository;
     private readonly ICurrentAttendanceLogRepository _currentAttendanceLogRepository;
     private readonly IScheduleTrackRepository _trackRepository;
-
-    public CurrentAttendanceLogCalculationService(IAttendanceLogRepository attendanceLogRepository, IEmployeeRepository employeeRepository, ICurrentAttendanceLogRepository currentAttendanceLogRepository, IScheduleTrackRepository trackRepository)
+    private readonly IConfiguration _configuration;
+    private readonly AttendanceSettings _settings;
+    public CurrentAttendanceLogCalculationService(IAttendanceLogRepository attendanceLogRepository, IEmployeeRepository employeeRepository, ICurrentAttendanceLogRepository currentAttendanceLogRepository, IScheduleTrackRepository trackRepository, IOptions<AttendanceSettings> options)
     {
         _attendanceLogRepository = attendanceLogRepository;
         _employeeRepository = employeeRepository;
         _currentAttendanceLogRepository = currentAttendanceLogRepository;
         _trackRepository = trackRepository;
+        _settings = options.Value;
+    }
+
+    public async Task<int> GetRemainingMonthlyLimitAsync(long employeeId, DateOnly month)
+    {
+        var schedule = await _employeeRepository.GetScheduleByEmployeeIdAsync(employeeId);
+        int totalLimit = 0;
+        if (schedule != null && schedule.LimitInMinutes > 20)
+        {
+            totalLimit = schedule.LimitInMinutes;
+        }
+
+        else
+        {
+            totalLimit = _settings.DefaultMonthlyLimit;
+        }
+
+        var allLogs = await _currentAttendanceLogRepository.GetLogsByEmployeeIdByMonthAsync(employeeId,month );
+
+        int totalLateMinutes = allLogs
+            .Where(l => l.IsWorkingDay && !l.IsJustified)
+            .Sum(l => l.LateArrivalMinutes);
+
+        int remainingLimit = totalLimit - totalLateMinutes;
+
+        return remainingLimit;
     }
 
     public async Task<int> GetLateArrivalsForPeriodAsync(long employeeId, DateTime month)
@@ -57,17 +86,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
 
         return lateSummary;
     }
-    public async Task<DateTime?> GetLastAttendanceLogDate(DateTime targetMonth)
-    {
-        try
-        {
-            return await _currentAttendanceLogRepository.GetLastAttendanceLogDateAsync(targetMonth);
-        }
-        catch (Exception ex)
-        {
-            return null;
-        }
-    }
+   
 
     public async Task ProcessAllEmployeesMonthlyAttendanceAsync(DateTime month)
     {
@@ -92,7 +111,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
 
     public bool IsWorkingDay(DateTime date)
     {
-        if (date.DayOfWeek == DayOfWeek.Saturday ||date.DayOfWeek == DayOfWeek.Sunday)
+        if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
         {
             return false;
         }
@@ -170,7 +189,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
 
             if (dailyLogsGrouped.TryGetValue(targetDate.Date, out var firstEntryLog))
             {
-                calendarDto = MapToCalendarDto(firstEntryLog, currentSchedule); 
+                calendarDto = MapToCalendarDto(firstEntryLog, currentSchedule);
                 calendarDto.ScheduledStartTime = applicableSchedule?.StartTime ?? currentSchedule.StartTime;
             }
             else
@@ -191,7 +210,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
     }
     public async Task UpdateMonthlyEntryTimesAsync(long employeeId, DateOnly month)
     {
-        
+
         var logsToUpdate = await _currentAttendanceLogRepository.GetLogsWithoutEntryTimeAsync(employeeId, month);
         if (!logsToUpdate.Any())
         {
@@ -201,19 +220,20 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         var attendanceEntryTimes = await _attendanceLogRepository.GetMonthlyFirstEntryTimesAsync(employeeId, month);
 
         var scheduleHistory = await _trackRepository.GetScheduleByDateAndByEmployeeIdAsync(employeeId, month);
-       
+
         var currentSchedule = await _employeeRepository.GetScheduleByEmployeeIdAsync(employeeId);
 
-        
+
         var allSchedules = (scheduleHistory ?? new List<EmployeeScheduleHistory>())
-            .Select(s => new {
+            .Select(s => new
+            {
                 s.StartTime,
-                FullDateTime = s.ValidFrom 
+                FullDateTime = s.ValidFrom
             })
             .Append(new
             {
                 currentSchedule.StartTime,
-                FullDateTime = currentSchedule.ModifiedAt 
+                FullDateTime = currentSchedule.ModifiedAt
             })
             .OrderByDescending(s => s.FullDateTime)
             .ToList();
@@ -224,7 +244,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         {
             if (attendanceEntryTimes.TryGetValue(log.EntryDay, out TimeOnly newEntryTime))
             {
-                
+
                 DateTime actualEntryMoment = log.EntryDay.ToDateTime(newEntryTime);
                 var applicableSchedule = allSchedules
                  .FirstOrDefault(s => actualEntryMoment >= s.FullDateTime)
@@ -256,7 +276,6 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
             }
         }
 
-      
         if (updatedLogs.Any())
         {
             await _currentAttendanceLogRepository.UpdateRangeAsync(updatedLogs);
@@ -431,7 +450,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
     public async Task<int> UpdateWorkingDayStatusAsync(WorkingDayStatusUpdateDto dto)
     {
         var log = await _currentAttendanceLogRepository.GetLogByEmployeeIdAndEntryDayAsync(dto.EmployeeId, dto.EntryDay);
-      
+
         if (log == null)
         {
             throw new Exception("log not found");
@@ -440,7 +459,7 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
         // Avval logni yangilash
         log.IsWorkingDay = dto.IsWorkingDay;
         log.ModifiedAt = DateTime.Now;
-       
+
         // YANGI IsJustified qiymati bilan CurrentAttendanceCalendar ob'ektini yaratish
         var tempCalendarDto = new CurrentAttendanceCalendar
         {

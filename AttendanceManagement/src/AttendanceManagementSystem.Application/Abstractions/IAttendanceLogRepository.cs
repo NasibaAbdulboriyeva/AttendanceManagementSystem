@@ -1,5 +1,5 @@
 ﻿using AttendanceManagementSystem.Domain.Entities;
-using DocumentFormat.OpenXml.InkML;
+
 namespace AttendanceManagementSystem.Application.Abstractions
 {
     public interface IAttendanceLogRepository

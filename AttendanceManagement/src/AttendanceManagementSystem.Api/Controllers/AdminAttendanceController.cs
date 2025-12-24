@@ -1,7 +1,9 @@
 ﻿using AttendanceManagementSystem.Api.Models;
+using AttendanceManagementSystem.Application.Abstractions;
 using AttendanceManagementSystem.Application.DTOs;
 using AttendanceManagementSystem.Application.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace AttendanceManagementSystem.Api.Controllers
 {
@@ -10,11 +12,14 @@ namespace AttendanceManagementSystem.Api.Controllers
         private readonly IAttendanceLogService _logService;
         private readonly IEmployeeService _employeeService;
         private readonly ICurrentAttendanceLogCalculationService _calculationService;
-        public AdminAttendanceController(IAttendanceLogService logService, IEmployeeService employeeService, ICurrentAttendanceLogCalculationService calculationService)
+        private readonly AttendanceSettings _settings;
+        public AdminAttendanceController(IAttendanceLogService logService, IEmployeeService employeeService, ICurrentAttendanceLogCalculationService calculationService, IOptions<AttendanceSettings> options)
         {
             _logService = logService;
             _employeeService = employeeService;
             _calculationService = calculationService;
+            _settings = options.Value;
+
         }
         [HttpGet]
         public IActionResult Instructions()
@@ -79,10 +84,9 @@ namespace AttendanceManagementSystem.Api.Controllers
         {
             DateTime targetDate = DateTime.Parse(date);
 
-            // AttendanceLogRepository orqali o'sha kungi barcha loglarni olish
+          
             var logs = await _logService.GetDailyRawLogsAsync(employeeId, targetDate);
 
-            // Faqat bizga kerakli vaqtlarni JSON formatida qaytarish
             var result = logs.OrderBy(l => l.RecordedTime).Select(l => new {
                 RecordedTime = l.RecordedTime.ToString("HH:mm:ss")
             });
@@ -151,12 +155,8 @@ namespace AttendanceManagementSystem.Api.Controllers
         {
             var targetMonth = new DateTime(year == 0 ? DateTime.Now.Year : year, month == 0 ? DateTime.Now.Month : month, 1);
 
-
-            // 3. DateOnly variantini yaratamiz
             var targetMonthDateOnly = DateOnly.FromDateTime(targetMonth);
             bool alreadyRunThisMonth = await _calculationService.HasMonthlyAttendanceLogs(targetMonth);
-
-      
 
             if (!alreadyRunThisMonth)
             {
@@ -254,7 +254,8 @@ namespace AttendanceManagementSystem.Api.Controllers
             var model = new AttendanceSummaryViewModel
             {
                 Employees = employeesSummary,
-                TargetMonth = month
+                TargetMonth = month,
+                MonthlyLimit = _settings.DefaultMonthlyLimit    
             };
 
             return View(model);
@@ -309,14 +310,15 @@ namespace AttendanceManagementSystem.Api.Controllers
             var employeeId = await _employeeService.GetEmployeeIdByUsernameAsync(username);
             var employee = await _employeeService.GetEmployeeByIdAsync(employeeId);
 
-
             var logs = await _calculationService.GetMonthlyAttendanceCalendarsAsync(employeeId, targetMonth);
 
             var viewModel = new AttendanceCalendarViewModel
             {
                 TargetMonth = targetMonth,
                 EmployeeFullName = employee.UserName,
-                MonthlyLogs = logs
+                MonthlyLogs = logs,
+                DefaultLimit= _settings.DefaultMonthlyLimit,
+                TotalUnjustifiedLates = await _calculationService.GetRemainingMonthlyLimitAsync(employeeId, DateOnly.FromDateTime(targetMonth))
             };
 
             return View("Calendar", viewModel);
@@ -336,49 +338,32 @@ namespace AttendanceManagementSystem.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> ScheduleSetup()
         {
+            var allEmployeesDto = await _employeeService.GetAllActiveEmployeesAsync();
             var allSchedules = await _employeeService.GetAllSchedulesAsync();
-            var viewModel = new EmployeeScheduleViewModel();
-            if (allSchedules !=null )
+
+            var scheduleDict = allSchedules
+                .GroupBy(s => s.EmployeeId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            var viewModel = new EmployeeScheduleViewModel
             {
+                Message = TempData["SuccessMessage"]?.ToString() ?? TempData["ErrorMessage"]?.ToString(),
 
-
-                var allEmployeesDto = await _employeeService.GetAllActiveEmployeesAsync();
-                
-
-                if (TempData["SuccessMessage"] is string successMessage)
+                Schedules = allEmployeesDto.OrderBy(e => e.UserName).Select(e =>
                 {
-                    viewModel.Message = successMessage;
-                }
-                else if (TempData["ErrorMessage"] is string errorMessage)
-                {
-                    viewModel.Message = errorMessage;
-                }
-
-                foreach (var employeeDto in allEmployeesDto.OrderBy(e => e.UserName))
-                {
-
-                    var scheduleDto = await _employeeService.GetEmployeeScheduleByEmployeeIdAsync(employeeDto.EmployeeId);
-
-                    var item = new ScheduleListItem
+                    scheduleDict.TryGetValue(e.EmployeeId, out var s);
+                    return new ScheduleListItem
                     {
-                        FullName = employeeDto.UserName,
-
+                        FullName = e.UserName,
+                        EmployeeScheduleId = s?.EmployeeScheduleId ?? 0,
+                        StartTime = s?.StartTime ?? new TimeOnly(9, 0), 
+                        EndTime = s?.EndTime ?? new TimeOnly(18, 0),   
+                        LimitInMinutes = s?.LimitInMinutes ?? 0,
+                        IsSelected = false
                     };
+                }).ToList()
+            };
 
-                    if (scheduleDto != null)
-                    {
-                        item.EmployeeScheduleId = scheduleDto.EmployeeScheduleId;
-                        item.StartTime = scheduleDto.StartTime;
-                        item.EndTime = scheduleDto.EndTime;
-                        item.LimitInMinutes = scheduleDto.LimitInMinutes;
-                        item.EmployementType = scheduleDto.EmployementType;
-                    }
-
-                    viewModel.Schedules.Add(item);
-                }
-
-                return View(viewModel);
-            }
             return View(viewModel);
         }
 

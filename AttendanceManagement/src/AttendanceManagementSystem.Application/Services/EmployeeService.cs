@@ -19,46 +19,46 @@ namespace AttendanceManagementSystem.Application.Services
 
         public async Task<(int CardsSynced, int FingerprintsSynced)> SyncEmployeeDataAsync()
         {
-
+           
             int cardsSynced = await SyncEmployeesByTypeAsync<TTLockIcCardDto>(
-                (searchStr, orderBy) => _ttLockService.GetAllIcCardRecordsAsync(searchStr, orderBy),
-                (employee, userDto) =>
+                fetchFunc: (searchStr, orderBy) => _ttLockService.GetAllIcCardRecordsAsync(searchStr, orderBy),
+                mapAction: (employee, userDto) =>
                 {
                     employee.CardId = userDto.CardId;
                     employee.CardNumber = userDto.CardNumber ?? string.Empty;
                     if (string.IsNullOrEmpty(employee.UserName))
                         employee.UserName = userDto.CardName ?? string.Empty;
-                });
+                },
+                getNameFunc: dto => dto.CardName 
+            );
 
             int fingerprintsSynced = await SyncEmployeesByTypeAsync<TTLockFingerprintDto>(
-                (searchStr, orderBy) => _ttLockService.GetAllFingerprintsPaginatedAsync(searchStr, orderBy),
-                (employee, userDto) =>
+                fetchFunc: (searchStr, orderBy) => _ttLockService.GetAllFingerprintsPaginatedAsync(searchStr, orderBy),
+                mapAction: (employee, userDto) =>
                 {
                     employee.FingerprintId = userDto.FingerprintId;
                     employee.FingerprintNumber = userDto.FingerprintNumber ?? string.Empty;
                     if (string.IsNullOrEmpty(employee.UserName))
-                    {
                         employee.UserName = userDto.FingerprintName ?? string.Empty;
-
-                    }
-
-                });
+                },
+                getNameFunc: dto => dto.FingerprintName 
+            );
 
             return (cardsSynced, fingerprintsSynced);
         }
 
         private async Task<int> SyncEmployeesByTypeAsync<T>(
-            Func<string?, int, Task<ICollection<T>>> fetchFunc,
-            Action<Employee, T> mapAction)
-            where T : class
+        Func<string?, int, Task<ICollection<T>>> fetchFunc,
+        Action<Employee, T> mapAction,
+        Func<T, string?> getNameFunc) 
+        where T : class
         {
-
             int syncedCount = 0;
-
             ICollection<T> ttLockUsers;
+
             try
             {
-
+                
                 ttLockUsers = await fetchFunc(null, 1);
             }
             catch (Exception ex)
@@ -67,32 +67,19 @@ namespace AttendanceManagementSystem.Application.Services
             }
 
             if (ttLockUsers == null || !ttLockUsers.Any())
-            {
                 return 0;
-            }
+
+            var userNames = ttLockUsers.Select(getNameFunc).Where(n => !string.IsNullOrEmpty(n)).ToList();
+            var existingEmployees = (await _employeeRepository.GetAllEmployeesAsync())
+                .Where(e => userNames.Contains(e.UserName))
+                .ToDictionary(e => e.UserName);
 
             foreach (var ttUser in ttLockUsers)
             {
-                Employee? employee = null;
+                var name = getNameFunc(ttUser);
+                if (string.IsNullOrEmpty(name)) continue;
 
-                if (ttUser is TTLockIcCardDto icCardDto)
-                {
-
-                    if (icCardDto.CardId > 0)
-                    {
-                        employee = await _employeeRepository.GetEmployeeByUsernameAsync(icCardDto.CardName);
-                    }
-                }
-
-                else if (ttUser is TTLockFingerprintDto fingerprintDto)
-                {
-
-                    if (fingerprintDto.FingerprintId > 0)
-                    {
-                        employee = await _employeeRepository.GetEmployeeByUsernameAsync(fingerprintDto.FingerprintName);
-                    }
-                }
-
+                existingEmployees.TryGetValue(name, out var employee);
                 bool isNew = (employee == null);
 
                 if (isNew)
@@ -101,12 +88,13 @@ namespace AttendanceManagementSystem.Application.Services
                     {
                         CreatedAt = DateTime.Now,
                         IsActive = true,
-                        UserName = string.Empty,
+                        UserName = name,
                         CardNumber = string.Empty
                     };
                 }
 
                 mapAction(employee, ttUser);
+
                 if (isNew)
                 {
                     await _employeeRepository.AddEmployeeAsync(employee);
@@ -116,12 +104,12 @@ namespace AttendanceManagementSystem.Application.Services
                     employee.ModifiedAt = DateTime.Now;
                     await _employeeRepository.UpdateEmployeeAsync(employee);
                 }
+
                 syncedCount++;
             }
 
             return syncedCount;
         }
-
         public async Task DeactivateEmployeeAsync(long id)
         {
             var employee = await _employeeRepository.GetEmployeeByIdAsync(id); // Kod orqali qidirish
@@ -131,7 +119,7 @@ namespace AttendanceManagementSystem.Application.Services
             }
 
             employee.IsActive = false;
-            employee.ModifiedAt = DateTime.UtcNow;
+            employee.ModifiedAt = DateTime.Now;
             await _employeeRepository.UpdateEmployeeAsync(employee);
         }
 
@@ -187,22 +175,24 @@ namespace AttendanceManagementSystem.Application.Services
 
         public async Task UpdateEmployeeScheduleAsync(EmployeeScheduleDto scheduleDto)
         {
-            if (scheduleDto == null)
-            {
-                throw new ArgumentNullException(nameof(scheduleDto), "Данные таблицы не могут быть пустыми");
-            }
+            if (scheduleDto == null) throw new ArgumentNullException(nameof(scheduleDto));
 
+            // 1. Transaction boshlash (Agar Repository support qilsa)
             var existingSchedule = await _employeeRepository.GetScheduleByEmployeeIdAsync(scheduleDto.EmployeeId);
 
             if (existingSchedule == null)
             {
-                throw new KeyNotFoundException($"Для сотрудника {scheduleDto.EmployeeId} расписание не найдено. Его нужно создать заранее.");
+                throw new KeyNotFoundException($"Расписание не найдено.");
             }
-            var scheduleHistoryEntity = MapToHistory(existingSchedule);
-            var employeeScheduleHistory = await _scheduleTrackRepository.AddScheduleHistoryAsync(scheduleHistoryEntity);
+
+            
+            var history = MapToHistory(existingSchedule);
+
+            await _scheduleTrackRepository.AddScheduleHistoryAsync(history);
 
             existingSchedule.StartTime = scheduleDto.StartTime;
             existingSchedule.EndTime = scheduleDto.EndTime;
+            existingSchedule.ModifiedAt = DateTime.UtcNow; 
 
             await _employeeRepository.UpdateScheduleAsync(existingSchedule);
         }
