@@ -114,12 +114,12 @@
 
                                     <label class="form-check-label working-day-visual-icon ml-2 @(dayLog.IsWorkingDay ? "text-primary" : "text-muted") font-weight-bold"
                                            for="work-day-@dayLog.EntryDay.ToString("yyyyMMdd")">
-                                        @(dayLog.IsWorkingDay ? "ON" : "OFF")
+                                        @(dayLog.IsWorkingDay ? " .ON" : " .OFF")
                                     </label>
                                 </div>
                             </td>
 
-                            <td>@(dayLog.ScheduledStartTime != TimeOnly.MinValue ? dayLog.ScheduledStartTime.ToString(@"hh\:mm") : "—")</td>
+                            <td>@(dayLog.ScheduledStartTime != TimeOnly.MinValue ? dayLog.ScheduledStartTime.ToString(@"HH\:mm") : "—")</td>
 
                             <td>
                                 @{
@@ -253,9 +253,9 @@
                 const visualIcon = row.find('.working-day-visual-icon');
                 visualIcon.removeClass('text-success text-secondary');
                 if (isChecked) {
-                    visualIcon.addClass('text-primary').text(' ON'); 
+                    visualIcon.addClass('text-primary').text('   .ON'); 
                 } else {
-                    visualIcon.addClass('text-muted').text(' OFF'); 
+                    visualIcon.addClass('text-muted').text('   .OFF'); 
                 }
 
                 $.ajax({

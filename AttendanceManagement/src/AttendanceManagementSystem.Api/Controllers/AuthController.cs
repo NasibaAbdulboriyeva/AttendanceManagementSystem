@@ -22,7 +22,7 @@ namespace AttendanceManagementSystem.Api.Controllers
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
 
-                return RedirectToAction("Dashboard", "AdminAttendance");
+                return RedirectToAction("SignUp", "Auth");
             }
 
             ViewData["ReturnUrl"] = returnUrl;
@@ -89,7 +89,10 @@ namespace AttendanceManagementSystem.Api.Controllers
         public IActionResult SignUp()
         {
             if (User.Identity?.IsAuthenticated == true)
-                return RedirectByRole();
+            {
+                return RedirectToAction(nameof(Login));
+
+            }
 
             return View(new UserCreateDto());
         }
@@ -129,16 +132,6 @@ namespace AttendanceManagementSystem.Api.Controllers
             return RedirectToAction(nameof(Login));
         }
 
-        private IActionResult RedirectByRole()
-        {
        
-            if (User.IsInRole("Admin"))
-            {
-                return RedirectToAction("Dashboard", "AdminAttendance");
-
-            }
-           
-            return RedirectToAction("Dashboard", "AdminAttendance");
-        }
     }
 }

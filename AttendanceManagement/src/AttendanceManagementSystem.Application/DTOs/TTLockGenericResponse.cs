@@ -26,12 +26,6 @@ namespace AttendanceManagementSystem.Application.DTOs
             [JsonPropertyName("total")]
             public int Total { get; set; }
 
-            // Eslatma: TTLock API dan xato kelganda, javobda 'errcode' va 'errmsg' ham bo'lishi mumkin. 
-            // Uni ham qo'shish tavsiya etiladi, garchi asosiy ro'yxat uchun majburiy bo'lmasa ham.
-            // [JsonPropertyName("errcode")]
-            // public int ErrCode { get; set; } 
-
-            // [JsonPropertyName("errmsg")]
-            // public string? ErrMsg { get; set; } 
+           
         }
     }

@@ -105,42 +105,45 @@
 
 <div class="modal fade" id="CreateConfirmationModal" tabindex="-1" aria-labelledby="CreateConfirmationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="CreateConfirmationModalLabel">
-                    <i class="fas fa-sync-alt me-2"></i> Синхронизация табеля
+                    <i class="fas fa-magic me-2"></i> Умная обработка табеля
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body py-4">
-                <div class="d-flex align-items-center mb-3">
+                <div class="d-flex align-items-center mb-4 p-3 bg-light rounded">
                     <div class="flex-shrink-0">
-                        <i class="fas fa-info-circle text-primary fa-3x"></i>
+                        <i class="fas fa-brain text-primary fa-3x"></i>
                     </div>
                     <div class="ms-3">
-                        <h6 class="fw-bold mb-1">Обновление данных за месяц</h6>
-                        <p class="text-muted small mb-0">Система проверит посещаемость для всех активных сотрудников.</p>
+                        <h6 class="fw-bold mb-1">Система выполнит следующие действия:</h6>
+                        <ul class="text-muted small mb-0 ps-3">
+                            <li>Если табель пуст — <strong>создаст календарь </strong> для всех активных сотрудников.</li>
+                            <li>Если табель есть — <strong>заполнит время первого входа</strong> на основе загруженных логов.</li>
+                        </ul>
                     </div>
                 </div>
                 
-                <p class="mb-0">
-                    Вы уверены, что хотите запустить <strong>генерацию и обновление</strong> табеля? 
-                    <br><br>
-                    <i class="fas fa-check-double text-success me-1"></i> 
-                    <small class="text-secondary">Существующие записи будут обновлены, а недостающие — созданы автоматически.</small>
-                </p>
+                <div class="px-2">
+                    <p class="mb-2">Вы уверены, что хотите запустить <strong>синхронизацию</strong>?</p>
+                    <p class="small text-secondary">
+                        <i class="fas fa-info-circle text-info me-1"></i> 
+                        Это действие обновит поле <b>"Первый вход"</b> и пересчитает минуты опоздания согласно актуальным данным.
+                    </p>
+                </div>
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" id="ConfirmCreateButton" class="btn btn-primary px-4">
-                    <span id="buttonText">Начать синхронизацию</span>
+                <button type="button" id="ConfirmCreateButton" class="btn btn-primary px-4 shadow-sm">
+                    <span id="buttonText">Запустить процесс</span>
                     <span id="buttonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                 </button>
             </div>
         </div>
     </div>
 </div>
-
 
 @section Scripts {
     @{

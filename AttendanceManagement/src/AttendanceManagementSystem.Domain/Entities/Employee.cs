@@ -5,10 +5,10 @@
         public long EmployeeId { get; set; }
         public string UserName { get; set; }
         public bool IsActive { get; set; }
-        public int? CardId { get; set; }//returned from TTLock when it is created 
-        public int? FingerprintId { get; set; }//returned from TTLock when it is created 
+        public int? CardId { get; set; }
+        public int? FingerprintId { get; set; }
         public string? FingerprintNumber{ get; set; }
-        public string? CardNumber { get; set; }//ic or finger card number
+        public string? CardNumber { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? ModifiedAt { get; set; }
         public ICollection<AttendanceLog> AttendanceLogs { get; set; }

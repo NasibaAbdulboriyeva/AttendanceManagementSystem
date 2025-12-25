@@ -157,7 +157,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             var targetMonthDateOnly = DateOnly.FromDateTime(targetMonth);
             bool alreadyRunThisMonth = await _calculationService.HasMonthlyAttendanceLogs(targetMonth);
-
+            var finalViewModel = new AttendanceCalendarViewModel();
             if (!alreadyRunThisMonth)
             {
 
@@ -170,11 +170,10 @@ namespace AttendanceManagementSystem.Api.Controllers
                     if (alreadyRunThisMonth)
                     {
 
-                        var finalViewModel = new AttendanceCalendarViewModel 
+                        finalViewModel = new AttendanceCalendarViewModel 
                         {
                             TargetMonth = targetMonth,
-                            IsCalendarAlreadyCreatedForTargetMonth = alreadyRunThisMonth,
-
+                            
                         };
                     }
                     else
@@ -191,34 +190,18 @@ namespace AttendanceManagementSystem.Api.Controllers
             }
             else
             {
+                finalViewModel = new AttendanceCalendarViewModel
+                {
+                    TargetMonth = targetMonth,
+                    DefaultLimit = _settings.DefaultMonthlyLimit
 
+                };
                 await _calculationService.ProcessUpdateForAllEmployeesMonthlyAttendanceAsync(targetMonthDateOnly);
             }
 
-            return RedirectToAction("CalendarCreatedConfirmation", new
-            {
-                year = targetMonth.Year,
-                month = targetMonth.Month,
-                creationDateTicks = DateTime.Now
-            });
-           
+            return View("Calendar",finalViewModel);
+
         }
-
-        [HttpGet]
-        public IActionResult CalendarCreatedConfirmation(int year, int month, DateTime creationDateTicks)
-        {
-            var targetMonth = new DateTime(year, month, 1);
-            var creationDate = creationDateTicks;
-
-            var viewModel = new CreationResultViewModel
-            {
-                TargetMonth = targetMonth,
-                CreationDate = creationDate
-            };
-
-            return View(viewModel);
-        }
-
 
         [HttpGet]
         [HttpPost]
@@ -260,7 +243,6 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View(model);
         }
-
 
         [HttpGet]
         [HttpPost]
@@ -404,13 +386,12 @@ namespace AttendanceManagementSystem.Api.Controllers
                 lateMinutes = newLateMinutes,
             });
         }
-        [HttpPost("UpdateDescription")]
+        [HttpPost]
         public async Task<IActionResult> UpdateDescription([FromBody] DescriptionUpdateDto dto)
         {
-            // Boshlang'ich tekshiruv
             if (dto == null || dto.EmployeeId <= 0 || dto.EntryDay == default)
             {
-                return BadRequest(new { isSuccess = false, message = "Noto'g'ri so'rov ma'lumotlari (Xodim ID va Sana zarur)." });
+                return BadRequest(new { isSuccess = false, message = "Некорректные данные запроса (необходимы ID сотрудника и дата)" });
             }
 
             try
@@ -424,17 +405,16 @@ namespace AttendanceManagementSystem.Api.Controllers
                     return Ok(new
                     {
                         isSuccess = true,
-                        message = "Izoh muvaffaqiyatli yangilandi.",
+                        message = "Комментарий  был успешно обновлен..",
                         newDescription = updatedDescription
                     });
                 }
                 else
                 {
-                    // Log topilmaganda
                     return NotFound(new
                     {
                         isSuccess = false,
-                        message = $"Xodim ID: {dto.EmployeeId} uchun {dto.EntryDay.ToShortDateString()} sanasiga mos yozuv topilmadi."
+                        message = $"Запись для сотрудника с ID: {dto.EmployeeId} на дату {dto.EntryDay.ToShortDateString()} не найдена."
                     });
                 }
             }
@@ -444,7 +424,7 @@ namespace AttendanceManagementSystem.Api.Controllers
                 return StatusCode(500, new
                 {
                     isSuccess = false,
-                    message = $"Serverda ichki xato: {ex.Message}"
+                    message = $"Внутренняя ошибка сервера: {ex.Message}"
                 });
             }
         }

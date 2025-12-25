@@ -1,9 +1,7 @@
 ﻿@model AttendanceSummaryViewModel
 @{
-    // Sahifa sarlavhasini belgilash
     ViewData["Title"] = "Сводка опозданий по сотрудникам";
 
-    // Controller va Action nomlari to'g'ridan-to'g'ri belgilandi
     const string controllerName = "AdminAttendance";
     const string actionName = "LateArrivalsSummary";
 }
@@ -15,7 +13,6 @@
     </div>
     <div class="card-body">
 
-        @* Oyni tanlash qismi *@
         <form method="post" asp-action="@actionName" asp-controller="@controllerName" style="display: flex; align-items: center; margin-bottom: 1rem;">
             <label for="month-picker" style="margin-right: 0.5rem; margin-bottom: 0; font-weight: bold;">Выберите месяц для отчета:</label>
             <input type="month"
@@ -45,33 +42,26 @@
 
                         var isOverLimit = lateMinutes > @Model.MonthlyLimit;
 
-                        // ✅ Limitdan oshgan minutlarni hisoblash
                         var sverhLimitMinutes = isOverLimit ? (lateMinutes - @Model.MonthlyLimit) : 0;
 
-                        // Limitdan oshgan holat uchun INLINE STYLE yaratish
                         string styleForLateMinutes = "";
 
                         if (isOverLimit)
                         {
-                            // Qizil rang va qalin shrift (jirniy)
                             styleForLateMinutes = "color: red; font-weight: bold; font-size: 1.1em;";
                         }
                         else if (lateMinutes > 0)
                         {
-                            // Limitdan oshmagan, ammo kech qolish bor
                             styleForLateMinutes = "color: orange;";
                         }
                         else
                         {
-                            // Kechikish yo'q
                             styleForLateMinutes = "color: green;";
                         }
-
 
                         <tr data-employee-id="@employee.EmployeeId">
                             <td style="border: 1px solid #dee2e6; padding: 8px;">@employee.FullName</td>
 
-                            @* Kech qolish minutlari (Opazdaniye) *@
                             <td style="text-align: center; border: 1px solid #dee2e6; padding: 8px;">
                                 @if (lateMinutes > 0)
                                 {
@@ -86,12 +76,10 @@
                             <td style="text-align: center; border: 1px solid #dee2e6; padding: 8px;">
                                 @if (sverhLimitMinutes > 0)
                                 {
-                                // Faqat limitdan oshgan minutlar uchun QIZIL rang
                                     <span style="color: red; font-weight: bold;">@sverhLimitMinutes</span>
                                 }
                                 else
                                 {
-                                    // Limitdan oshmagan yoki umuman kechikish bo'lmaganda 0
                                     <span>0</span>
                                 }
                             </td>
@@ -105,5 +93,4 @@
 </div>
 
 @section Scripts {
-    @* JavaScript bloki endi kerak emas *@
 }

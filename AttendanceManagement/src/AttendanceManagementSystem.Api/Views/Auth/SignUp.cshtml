@@ -5,14 +5,13 @@
 }
 
 <style>
-    /* Кастомные стили, как и на странице входа, для единого дизайна */
     body {
         background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
     }
 
     .signup-card {
         margin-top: 5vh;
-        margin-bottom: 5vh; /* Отступ снизу, чтобы форма не прилипала к краю */
+        margin-bottom: 5vh; 
         border-radius: 1rem;
         border: none;
         overflow: hidden;
@@ -24,7 +23,6 @@
         }
 
     .card-header-custom {
-        /* Использовать акцентный цвет (зеленый) для регистрации */
         background-color: #4caf50;
         color: white;
         padding: 1.5rem 0;
@@ -68,21 +66,18 @@
             </div>
             <div class="card-body p-4 p-md-5">
 
-                @* Общие ошибки модели *@
                 <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
 
                 <form asp-controller="Auth" asp-action="SignUp" method="post">
 
                     <h5 class="mb-4 text-secondary">Личная информация</h5>
                     <div class="row">
-                        @* Имя (First Name) *@
                         <div class="form-group mb-4 col-md-6">
                             <label asp-for="FirstName" class="form-label">Имя</label>
                             <input asp-for="FirstName" class="form-control" placeholder="Введите ваше имя" />
                             <span asp-validation-for="FirstName" class="text-danger" style="font-size: 0.85em;"></span>
                         </div>
 
-                        @* Фамилия (Last Name) *@
                         <div class="form-group mb-4 col-md-6">
                             <label asp-for="LastName" class="form-label">Фамилия</label>
                             <input asp-for="LastName" class="form-control" placeholder="Введите вашу фамилию" />
@@ -92,14 +87,12 @@
 
                     <h5 class="mb-4 text-secondary">Контактная информация</h5>
 
-                    @* Email *@
                     <div class="form-group mb-4">
                         <label asp-for="Email" class="form-label">Электронная почта (Email)</label>
                         <input asp-for="Email" type="email" class="form-control" placeholder="example@domain.com" />
                         <span asp-validation-for="Email" class="text-danger" style="font-size: 0.85em;"></span>
                     </div>
 
-                    @* Телефон рақами (Phone Number) *@
                     <div class="form-group mb-4">
                         <label asp-for="PhoneNumber" class="form-label">Номер телефона</label>
                         <input asp-for="PhoneNumber" type="tel" class="form-control" placeholder="+998 XX YYY YY YY" />
@@ -108,14 +101,12 @@
 
                     <h5 class="mb-4 text-secondary">Данные для входа</h5>
 
-                    @* Имя Пользователя (UserName) *@
                     <div class="form-group mb-4">
                         <label asp-for="UserName" class="form-label">Имя Пользователя</label>
                         <input asp-for="UserName" class="form-control" placeholder="Уникальное имя для входа" />
                         <span asp-validation-for="UserName" class="text-danger" style="font-size: 0.85em;"></span>
                     </div>
 
-                    @* Пароль (Password) *@
                     <div class="form-group mb-5">
                         <label asp-for="Password" class="form-label">Пароль</label>
                         <input asp-for="Password" type="password" class="form-control" placeholder="Введите надежный пароль" />
@@ -136,7 +127,6 @@
 
 @section Scripts {
     @{
-        // Скрипты для Unobtrusive Validation
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }

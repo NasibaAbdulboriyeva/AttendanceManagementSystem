@@ -14,16 +14,12 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
         private readonly AppDbContext _context;
         private const int SingleRecordId = 1;
 
-        // Dependency Injection orqali DbContextni qabul qilish
         public TTlockTokenRepository(AppDbContext context)
         {
             _context = context;
         }
-
-        // Boshlang'ich tokenlarni saqlash (Agar baza bo'sh bo'lsa)
         public async Task InitializeTokenAsync(TTLockSettings initialToken)
         {
-            // 1. Bazada yozuv mavjudligini tekshirish
             var existingToken = await _context.TTlockSettings.FirstOrDefaultAsync(t => t.Id == SingleRecordId);
 
             if (existingToken == null)
@@ -35,13 +31,11 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
 
                 Console.WriteLine("✅ TTLock boshlang'ich tokenlari Repository orqali bazaga saqlandi.");
             }
-            // Agar yozuv mavjud bo'lsa, hech narsa qilmaymiz, eski tokenlarni saqlab qolamiz.
         }
 
         
         public async Task UpdateTokenAsync(TTLockSettings token)
         {
-            // 1. Yangilanadigan yozuvni olish (Tracking ni yoqish uchun)
             var recordToUpdate = await _context.TTlockSettings.FirstOrDefaultAsync(t => t.Id == SingleRecordId);
 
             if (recordToUpdate == null)
@@ -49,7 +43,6 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
                 throw new InvalidOperationException("TTLock token yozuvi bazada topilmadi. InitializeTokenAsync() avval chaqirilishi kerak.");
             }
 
-            // 2. Olingan yozuvni yangi ma'lumotlar bilan yangilash
             recordToUpdate.AccessToken = token.AccessToken;
             recordToUpdate.RefreshToken = token.RefreshToken;
             recordToUpdate.ExpiresAt = token.ExpiresAt;

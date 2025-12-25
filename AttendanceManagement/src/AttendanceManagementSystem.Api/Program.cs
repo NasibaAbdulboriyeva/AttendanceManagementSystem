@@ -9,7 +9,6 @@ namespace AttendanceManagementSystem.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
             builder.Services.AddControllersWithViews();
             builder.ConfigureDB();
             builder.ConfigureDI();
@@ -55,7 +54,7 @@ namespace AttendanceManagementSystem.Api
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Auth}/{action=SignUp}/{id?}");
+                pattern: "{controller=Auth}/{action=Login}/{id?}");
 
             app.Run();
         }

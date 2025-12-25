@@ -7,7 +7,7 @@ namespace AttendanceManagementSystem.Application.Services
         Task<int> SyncAttendanceLogsAsync();
         Task<ICollection<AttendanceLog>> GetLogsByEmployeeIdAsync(long employeeId, DateTime startDate, DateTime endDate);
         Task<ICollection<AttendanceLog>> GetDailyRawLogsAsync(long employeeId, DateTime date);
-        Task<ICollection<AttendanceLog>> GetLogsForAllEmployeesByDayAsync(DateTime targetDate);//usha kunga tegishlisini olish
+        Task<ICollection<AttendanceLog>> GetLogsForAllEmployeesByDayAsync(DateTime targetDate);
 
     }
 }
