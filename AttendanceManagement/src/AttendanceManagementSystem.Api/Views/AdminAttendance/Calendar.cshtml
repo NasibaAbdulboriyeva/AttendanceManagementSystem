@@ -5,6 +5,65 @@
 
     string FormatTime(TimeOnly time) => time.ToString("HH:mm");
 }
+
+<!-- Error Modal (Pop-up) -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-warning text-dark border-0">
+                <h5 class="modal-title fw-bold" id="errorModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Внимание!
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-warning border-start border-5 border-warning mb-3">
+                    <h6 class="fw-bold mb-2">
+                        <i class="fas fa-info-circle me-2"></i> Проблема с расписанием
+                    </h6>
+                    <p class="mb-0" id="errorMessageText">@TempData["ErrorMessage"]</p>
+                </div>
+
+                @if (ViewBag.MissingEmployees != null)
+                {
+                    <div class="card border-warning mb-3">
+                        <div class="card-header bg-warning bg-opacity-10 border-warning">
+                            <h6 class="mb-0 fw-bold text-dark">
+                                <i class="fas fa-users me-2"></i> Сотрудники без графика:
+                            </h6>
+                        </div>
+                        <div class="card-body p-2" style="max-height: 250px; overflow-y: auto;">
+                            <ul class="list-group list-group-flush">
+                                @foreach (var empName in (IEnumerable<string>)ViewBag.MissingEmployees)
+                                {
+                                    <li class="list-group-item d-flex align-items-center py-2">
+                                        <i class="fas fa-user-clock text-warning me-2"></i>
+                                        <span class="fw-medium">@empName</span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                }
+
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <small>Пожалуйста, настройте рабочее время для указанных сотрудников перед созданием календаря.</small>
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Закрыть
+                </button>
+                <a asp-action="ScheduleSetup" class="btn btn-warning">
+                    <i class="fas fa-calendar-alt me-1"></i> Перейти к настройке графиков
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Daily Logs Modal -->
 <div class="modal fade" id="logDetailsModal" tabindex="-1" aria-labelledby="logDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-md">
         <div class="modal-content shadow-lg border-0">
@@ -25,6 +84,7 @@
         </div>
     </div>
 </div>
+
 <div class="card shadow mb-4">
     <div class="card-header py-3">
         <h2 class="m-0 font-weight-bold text-primary">
@@ -69,7 +129,7 @@
                 <thead>
                     <tr>
                         <th style="width: 40px;">Дата</th>
-                        <th style="width: 80px;">Рабочий день</th> 
+                        <th style="width: 80px;">Рабочий день</th>
                         <th style="width: 90px;">План. время</th>
                         <th style="width: 100px;">Факт. приход (Ручной ввод)</th>
                         <th style="width: 40px;">Опоздание (мин)</th>
@@ -91,7 +151,6 @@
                             data-late-minutes="@dayLog.LateMinutesTotal"
                             data-is-justified="@dayLog.IsJustified.ToString().ToLower()"
                             data-is-working-day="@dayLog.IsWorkingDay.ToString().ToLower()">
-
 
                             <td class="text-center font-weight-bold">
                                 <a href="javascript:void(0)"
@@ -185,15 +244,23 @@
 </div>
 
 <div class="mt-4 d-flex justify-content-between">
-
     <a asp-controller="AdminAttendance" asp-action="Dashboard" class="btn btn-secondary btn-lg shadow">
         <i class="fas fa-arrow-left me-1"></i> Вернуться в панель управления
     </a>
 </div>
+
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function () {
+            // Show error modal if error message exists
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>
+                    var errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                    errorModal.show();
+            </text>
+        }
 
             function showFeedback(element, isSuccess) {
                 element.removeClass('is-valid is-invalid');
@@ -236,8 +303,6 @@
                 }
             }
 
-       
-
             $('.working-day-checkbox').on('change', function () {
                 var checkbox = $(this);
                 var row = checkbox.closest('tr');
@@ -253,15 +318,18 @@
                 const visualIcon = row.find('.working-day-visual-icon');
                 visualIcon.removeClass('text-success text-secondary');
                 if (isChecked) {
-                    visualIcon.addClass('text-primary').text('   .ON'); 
+                    visualIcon.addClass('text-primary').text('   .ON');
                 } else {
-                    visualIcon.addClass('text-muted').text('   .OFF'); 
+                    visualIcon.addClass('text-muted').text('   .OFF');
                 }
 
                 $.ajax({
                     url: '@Url.Action("UpdateWorkingDayStatus", "AdminAttendance")',
                     type: 'POST',
                     contentType: 'application/json',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
                     data: JSON.stringify({
                         EmployeeId: employeeId,
                         EntryDay: entryDay,
@@ -284,17 +352,11 @@
                     },
                     error: function () {
                         showFeedback(checkbox, false);
-                        alert("Ошибка: Статус  не изменен.");
+                        alert("Ошибка: Статус не изменен.");
                         checkbox.prop('checked', !isChecked);
                     }
                 });
             });
-
-
-
-
-
-
 
             $('.justify-checkbox').on('change', function () {
                 var checkbox = $(this);
@@ -320,6 +382,9 @@
                     url: '@Url.Action("UpdateJustificationStatus", "AdminAttendance")',
                     type: 'POST',
                     contentType: 'application/json',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
                     data: JSON.stringify({
                         EmployeeId: employeeId,
                         EntryDay: entryDay,
@@ -348,11 +413,6 @@
                 });
             });
 
-
-
-
-
-
             $('.comment-input').on('blur', function () {
                 var input = $(this);
                 var employeeId = input.data('employee-id');
@@ -367,6 +427,9 @@
                     url: '@Url.Action("UpdateDescription", "AdminAttendance")',
                     type: 'POST',
                     contentType: 'application/json',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
                     data: JSON.stringify({
                         EmployeeId: employeeId,
                         EntryDay: entryDay,
@@ -407,6 +470,9 @@
                     url: '@Url.Action("UpdateEntryTime", "AdminAttendance")',
                     type: 'POST',
                     contentType: 'application/json',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
                     data: JSON.stringify({
                         EmployeeId: employeeId,
                         EntryDay: entryDay,
@@ -416,7 +482,7 @@
                         showFeedback(input, true);
                         input.data('original-value', manualEntryTime);
 
-                        if (response.isSuccess && response.lateMinutes !== undefined) {
+                        if (response.success && response.lateMinutes !== undefined) {
                             const newLateMinutes = response.lateMinutes;
                             const lateMinutesSpan = row.find('.late-minutes-cell .current-late-minutes');
 
@@ -469,13 +535,12 @@
             modal.show();
 
             $.ajax({
-                url: '/AdminAttendance/GetDailyRawLogs', 
+                url: '/AdminAttendance/GetDailyRawLogs',
                 type: 'GET',
                 data: { employeeId: employeeId, date: date },
                 success: function (data) {
                     $('#modal-loading').hide();
 
-                   
                     let html = `
                         <div class="p-3 bg-light border-bottom">
                             <strong>Дата:</strong> ${date}

@@ -1,5 +1,6 @@
 using AttendanceManagementSystem.Api.Configurations;
 using AttendanceManagementSystem.Application.Abstractions;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace AttendanceManagementSystem.Api
 {
@@ -13,9 +14,13 @@ namespace AttendanceManagementSystem.Api
             builder.ConfigureDB();
             builder.ConfigureDI();
 
-           builder.Services.AddAuthentication("Cookies")
-          .AddCookie("Cookies", options =>
-           {
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+      .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options => 
+            {
+               options.ExpireTimeSpan = TimeSpan.FromDays(7);
+               options.SlidingExpiration = true;
+               options.Cookie.HttpOnly = true;
+               options.Cookie.SameSite = SameSiteMode.Lax; // ?
                options.LoginPath = "/Auth/Login";
                options.LogoutPath = "/Auth/Logout";
                options.AccessDeniedPath = "/Auth/AccessDenied";

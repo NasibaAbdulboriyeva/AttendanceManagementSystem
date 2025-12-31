@@ -22,7 +22,6 @@ namespace AttendanceManagementSystem.Api.Configurations
             builder.Services.AddScoped<ICurrentAttendanceLogRepository, CurrentAttendanceLogRepository>();
             builder.Services.AddScoped<ICurrentAttendanceLogCalculationService, CurrentAttendanceLogCalculationService>();
 
-
             builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();

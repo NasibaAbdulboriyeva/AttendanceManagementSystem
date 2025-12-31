@@ -1,6 +1,7 @@
 ﻿using AttendanceManagementSystem.Application.Abstractions;
 using AttendanceManagementSystem.Application.DTOs;
 using AttendanceManagementSystem.Domain.Entities;
+using DocumentFormat.OpenXml.InkML;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 namespace AttendanceManagementSystem.Application.Services;
@@ -75,18 +76,35 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
 
         return lateSummary;
     }
-   
 
-    public async Task ProcessAllEmployeesMonthlyAttendanceAsync(DateTime month)
+
+    public async Task<ICollection<string>> ProcessAllEmployeesMonthlyAttendanceAsync(DateTime month)
     {
-        var activeEmployeeIds = await _employeeRepository.GetAllActiveEmployeesAsync();
+        var activeEmployees = await _employeeRepository.GetAllActiveEmployeesAsync();
 
-        foreach (var employee in activeEmployeeIds)
+        // Bazadan faqat ID-larni raqam ko'rinishida olamiz (Select orqali)
+        var employeeIdsWithSchedule = await _employeeRepository.GetEmployeeIdsWithSchedulesAsync();
+
+        var missingSchedules = activeEmployees
+            .Where(e => !employeeIdsWithSchedule.Contains(e.EmployeeId))
+            .Select(e => $"{e.UserName}")
+            .ToList();
+
+        if (missingSchedules.Any())
         {
+            return missingSchedules; 
+        }
+
+     
+        foreach (var employee in activeEmployees)
+        {
+           
             await GetAndSaveMonthlyAttendanceCalendarAsync(employee.EmployeeId, month);
         }
 
+        return new List<string>();
     }
+
 
     public async Task ProcessUpdateForAllEmployeesMonthlyAttendanceAsync(DateOnly month)
     {
@@ -150,12 +168,17 @@ public class CurrentAttendanceLogCalculationService : ICurrentAttendanceLogCalcu
 
         var scheduleHistory = await _trackRepository.GetScheduleByDateAndByEmployeeIdAsync(employeeId, DateOnly.FromDateTime(startDate));
         var currentSchedule = await _employeeRepository.GetScheduleByEmployeeIdAsync(employeeId);
+        if (currentSchedule == null)
+        {
+            throw new Exception($"No schedule found for employee with ID {employeeId}");
+        }
 
         var allSchedules = (scheduleHistory ?? new List<EmployeeScheduleHistory>())
             .Select(s => new { s.StartTime, FullDateTime = s.ValidFrom })
             .Append(new { currentSchedule.StartTime, FullDateTime = currentSchedule.ModifiedAt })
             .OrderByDescending(s => s.FullDateTime)
             .ToList();
+       
 
         var dailyLogsGrouped = allExistingLogs
             .GroupBy(log => log.RecordedTime.Date)

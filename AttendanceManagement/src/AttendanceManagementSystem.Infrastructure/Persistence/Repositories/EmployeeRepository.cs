@@ -18,7 +18,14 @@ namespace AttendanceManagementSystem.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
             return employee.EmployeeId;
         }
-
+        public async Task<ICollection<long>> GetEmployeeIdsWithSchedulesAsync()
+        {
+            return await _context.EmployeeSchedules
+                .AsNoTracking() 
+                .Select(s => s.EmployeeId) 
+                .Distinct() 
+                .ToListAsync();
+        }
         public async Task<ICollection<Employee>> GetAllEmployeesAsync()
         {
             return await _context.Employees

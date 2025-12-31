@@ -2,25 +2,29 @@
 using AttendanceManagementSystem.Application.Abstractions;
 using AttendanceManagementSystem.Application.DTOs;
 using AttendanceManagementSystem.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 namespace AttendanceManagementSystem.Api.Controllers
 {
+    [Authorize]
     public class AdminAttendanceController : Controller
     {
         private readonly IAttendanceLogService _logService;
         private readonly IEmployeeService _employeeService;
         private readonly ICurrentAttendanceLogCalculationService _calculationService;
         private readonly AttendanceSettings _settings;
-        public AdminAttendanceController(IAttendanceLogService logService, IEmployeeService employeeService, ICurrentAttendanceLogCalculationService calculationService, IOptions<AttendanceSettings> options)
+        private readonly ILogger<AdminAttendanceController> _logger;
+        public AdminAttendanceController(IAttendanceLogService logService, IEmployeeService employeeService, ICurrentAttendanceLogCalculationService calculationService, IOptions<AttendanceSettings> options, ILogger<AdminAttendanceController> logger)
         {
             _logService = logService;
             _employeeService = employeeService;
             _calculationService = calculationService;
             _settings = options.Value;
-
+            _logger = logger;
         }
+
         [HttpGet]
         public IActionResult Instructions()
         {
@@ -28,9 +32,13 @@ namespace AttendanceManagementSystem.Api.Controllers
             ViewData["Title"] = "Инструкция по Использованию Админ-Панели";
             return View();
         }
+
         [HttpGet]
         public IActionResult Dashboard()
         {
+            var username = User.Identity?.Name;
+            _logger.LogInformation("User {Username} accessed dashboard", username);
+
             return View();
         }
 
@@ -79,6 +87,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View("AllAttendanceLogs", result);
         }
+
         [HttpGet]
         public async Task<IActionResult> GetDailyRawLogs(long employeeId, string date)
         {
@@ -135,6 +144,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View(viewModel);
         }
+
         [HttpGet]
         public async Task<IActionResult> Employees()
         {
@@ -150,6 +160,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             return View(viewModel);
         }
+
         [HttpGet]
         public async Task<IActionResult> SyncCalendarForAll(int year, int month)
         {
@@ -163,7 +174,15 @@ namespace AttendanceManagementSystem.Api.Controllers
 
                 try
                 {
-                    await _calculationService.ProcessAllEmployeesMonthlyAttendanceAsync(targetMonth);
+                    var missingSchedules = await _calculationService.ProcessAllEmployeesMonthlyAttendanceAsync(targetMonth);
+
+                    if (missingSchedules.Any())
+                    {
+                        TempData["ErrorMessage"] = "⚠️ Календарь не создан. Причина : у следующих сотрудников не найден рабочий график: "
+                                                    + string.Join(", ", missingSchedules)
+                                                    + ". Пожалуйста, настройте их графики и повторите синхронизацию.";
+                        
+                    }
 
                     alreadyRunThisMonth = await _calculationService.HasMonthlyAttendanceLogs(targetMonth);
 
@@ -175,11 +194,7 @@ namespace AttendanceManagementSystem.Api.Controllers
                             TargetMonth = targetMonth,
                             
                         };
-                    }
-                    else
-                    {
 
-                        TempData["ErrorMessage"] = $"⚠️ Создание календаря за {targetMonth:yyyy-MM} месяц завершено, но записи (логи) не были найдены.";
                     }
 
                 }
@@ -190,13 +205,14 @@ namespace AttendanceManagementSystem.Api.Controllers
             }
             else
             {
+                await _calculationService.ProcessUpdateForAllEmployeesMonthlyAttendanceAsync(targetMonthDateOnly);
+
                 finalViewModel = new AttendanceCalendarViewModel
                 {
                     TargetMonth = targetMonth,
                     DefaultLimit = _settings.DefaultMonthlyLimit
 
                 };
-                await _calculationService.ProcessUpdateForAllEmployeesMonthlyAttendanceAsync(targetMonthDateOnly);
             }
 
             return View("Calendar",finalViewModel);
@@ -313,7 +329,7 @@ namespace AttendanceManagementSystem.Api.Controllers
 
             await _employeeService.DeactivateEmployeeAsync(id);
 
-            return RedirectToAction("EmployeeList");
+            return RedirectToAction("Employees");
 
         }
 

@@ -68,9 +68,10 @@
             </div>
             <div class="card-body p-4 p-md-5">
 
-            
-                <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
-
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+                }
               
                 @if (TempData["SuccessMessage"] != null)
                 {
