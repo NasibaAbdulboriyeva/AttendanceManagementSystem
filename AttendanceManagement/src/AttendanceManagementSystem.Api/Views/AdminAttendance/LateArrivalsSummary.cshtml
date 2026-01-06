@@ -6,88 +6,90 @@
     const string actionName = "LateArrivalsSummary";
 }
 
-<div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h2 style="color: green; margin: 0; font-weight: bold;">Общий ежемесячный отчет по опозданиям и сверх лимита</h2>
-        <p style="color: #6c757d;">Общий лимит опозданий: @Model.MonthlyLimit минут</p>
+<div class="container-fluid mt-4">
+  
+    <div class="row mb-3">
+        <div class="col-12">
+            <a asp-controller="AdminAttendance" asp-action="Dashboard" class="btn btn-secondary shadow-sm px-4" style="border-radius: 8px;">
+                <i class="fas fa-arrow-left me-1"></i> Вернуться в панель управления
+            </a>
+        </div>
     </div>
-    <div class="card-body">
 
-        <form method="post" asp-action="@actionName" asp-controller="@controllerName" style="display: flex; align-items: center; margin-bottom: 1rem;">
-            <label for="month-picker" style="margin-right: 0.5rem; margin-bottom: 0; font-weight: bold;">Выберите месяц для отчета:</label>
-            <input type="month"
-                   id="month-picker"
-                   name="targetMonth"
-                   style="border: 1px solid #ccc; padding: 0.375rem 0.75rem; border-radius: 0.25rem; margin-right: 0.5rem; width: 150px;"
-                   value="@Model.TargetMonth.ToString("yyyy-MM")">
-            <button type="submit" style="background-color: #007bff; color: white; border: none; padding: 0.375rem 0.75rem; border-radius: 0.25rem; cursor: pointer;">Показать отчет</button>
-        </form>
+    <div class="card shadow mb-4" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header py-3 bg-white">
+            <h2 style="color: green; margin: 0; font-weight: bold;">Общий ежемесячный отчет по опозданиям</h2>
+            <p class="text-muted mb-0">Общий лимит опозданий: <strong>@Model.MonthlyLimit минут</strong></p>
+        </div>
 
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; border: 1px solid #dee2e6;">
-                <thead>
-                    <tr style="background-color: #f8f9fa;">
-                        <th style="border: 1px solid #dee2e6; padding: 8px;">ФИО Сотрудника</th>
-                        <th style="width: 150px; text-align: center; border: 1px solid #dee2e6; padding: 8px;">Общее опоздание (мин)</th>
+        <div class="card-body">
+          
+            <form method="post" asp-action="@actionName" asp-controller="@controllerName" class="form-inline mb-4" style="display: flex; align-items: center; gap: 10px;">
+                <label for="month-picker" style="font-weight: bold; margin-bottom: 0;">Выберите месяц:</label>
+                <input type="month"
+                       激id="month-picker"
+                       name="targetMonth"
+                       class="form-control"
+                       style="width: auto;"
+                       value="@Model.TargetMonth.ToString("yyyy-MM")">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="fas fa-filter me-1"></i> Показать отчет
+                </button>
+            </form>
 
-                       
-                        <th style="width: 150px; text-align: center; border: 1px solid #dee2e6; padding: 8px; color: firebrick;">Сверхлимит опоздания (мин)</th>
-
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var employee in Model.Employees)
-                    {
-                        var lateMinutes = employee.TotalLateMinutes;
-
-                        var isOverLimit = lateMinutes > @Model.MonthlyLimit;
-
-                        var sverhLimitMinutes = isOverLimit ? (lateMinutes - @Model.MonthlyLimit) : 0;
-
-                        string styleForLateMinutes = "";
-
-                        if (isOverLimit)
-                        {
-                            styleForLateMinutes = "color: red; font-weight: bold; font-size: 1.1em;";
-                        }
-                        else if (lateMinutes > 0)
-                        {
-                            styleForLateMinutes = "color: orange;";
-                        }
-                        else
-                        {
-                            styleForLateMinutes = "color: green;";
-                        }
-
-                        <tr data-employee-id="@employee.EmployeeId">
-                            <td style="border: 1px solid #dee2e6; padding: 8px;">@employee.FullName</td>
-
-                            <td style="text-align: center; border: 1px solid #dee2e6; padding: 8px;">
-                                @if (lateMinutes > 0)
-                                {
-                                    <span style="@styleForLateMinutes">@lateMinutes</span>
-                                }
-                                else
-                                {
-                                    <span style="color: green;">0</span>
-                                }
-                            </td>
-
-                            <td style="text-align: center; border: 1px solid #dee2e6; padding: 8px;">
-                                @if (sverhLimitMinutes > 0)
-                                {
-                                    <span style="color: red; font-weight: bold;">@sverhLimitMinutes</span>
-                                }
-                                else
-                                {
-                                    <span>0</span>
-                                }
-                            </td>
-
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" style="width: 100%; border-collapse: collapse;">
+                    <thead class="thead-light">
+                        <tr>
+                            <th style="padding: 12px;">ФИО Сотрудника</th>
+                            <th style="width: 200px; text-align: center; padding: 12px;">Общее опоздание (мин)</th>
+                            <th style="width: 220px; text-align: center; padding: 12px; color: firebrick;">Сверхлимит (мин)</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var employee in Model.Employees)
+                        {
+                            var lateMinutes = employee.TotalLateMinutes;
+                            var isOverLimit = lateMinutes > Model.MonthlyLimit;
+                            var sverhLimitMinutes = isOverLimit ? (lateMinutes - Model.MonthlyLimit) : 0;
+
+                            <tr>
+                                <td style="padding: 12px; vertical-align: middle; font-weight: 500;">
+                                    @employee.FullName
+                                </td>
+
+                                <td style="text-align: center; vertical-align: middle; padding: 12px;">
+                                    @if (lateMinutes > Model.MonthlyLimit)
+                                    {
+                                        <span style="color: red; font-weight: bold; font-size: 1.1em;">@lateMinutes</span>
+                                    }
+                                    else if (lateMinutes > 0)
+                                    {
+                                        <span style="color: orange; font-weight: bold;">@lateMinutes</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: green;">0</span>
+                                    }
+                                </td>
+
+                                <td style="text-align: center; vertical-align: middle; padding: 12px;">
+                                    @if (sverhLimitMinutes > 0)
+                                    {
+                                        <span class="badge badge-danger" style="font-size: 1rem; padding: 8px 12px; background-color: #dc3545;">
+                                            @sverhLimitMinutes
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">0</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
